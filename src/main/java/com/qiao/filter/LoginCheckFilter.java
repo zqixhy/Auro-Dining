@@ -24,7 +24,7 @@ public class LoginCheckFilter implements Filter {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
         String requestURI = request.getRequestURI();
-        log.info("拦截到请求：{}",requestURI);
+        log.info("filted request：{}",requestURI);
 
         String[] urls = new String[]{
                 "/employee/login",
@@ -38,7 +38,7 @@ public class LoginCheckFilter implements Filter {
         boolean check = check(urls, requestURI);
 
         if(check){
-            log.info("本次请求{}不需要处理",requestURI);
+            log.info("this request {}no need to do",requestURI);
             filterChain.doFilter(request,response);
             return;
         }

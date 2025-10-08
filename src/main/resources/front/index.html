@@ -3,19 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=no,minimal-ui">
-    <title>菩提阁</title>
+    <title>Reggie Order System</title>
     <link rel="icon" href="images/favico.ico">
-    <!--不同屏幕尺寸根字体设置-->
     <script src="./js/base.js"></script>
-    <!--element-ui的样式-->
     <link rel="stylesheet" href="../backend/plugins/element-ui/index.css" />
-    <!--引入vant样式-->
     <link rel="stylesheet" href="styles/vant.min.css"/>
-    <!-- 引入样式  -->
     <link rel="stylesheet" href="styles/index.css" />
-    <!--本页面内容的样式-->
     <link rel="stylesheet" href="styles/main.css" />
   </head>
   <body>
@@ -27,16 +21,16 @@
         <div class="divStatic">
           <img src="./images/logo.png"  class="logo"/>
           <div class="divDesc">
-            <div class="divName">菩提阁餐厅</div>
+            <div class="divName">Reggie Restaurent</div>
             <div class="divSend">
-                <span><img src="./images/location.png"/> 距离1.5km</span>
-                <span><img src="./images/money.png"/> 配送费6元</span>
-                <span><img src="./images/time.png"/> 预计时长12min</span>
+                <span><img src="./images/location.png"/> distance: 1.5km</span>
+                <span><img src="./images/money.png"/> shipping fee:6元</span>
+                <span><img src="./images/time.png"/> estimate arrival time: 12min</span>
             </div>
           </div>
         </div>
         <div class="divDesc">
-          简介: 菩提阁中餐厅是菩提阁点餐的独立的品牌，定位“大众 化的美食外送餐饮”，旨为顾客打造专业美食。
+
         </div>
       </div>
       <div class="divBody">
@@ -56,7 +50,7 @@
               <div>
                 <div class="divName">{{item.name}}</div>
                 <div class="divDesc">{{item.description}}</div>
-                <div class="divDesc">{{'月销' + (item.saleNum ? item.saleNum : 0)  }}</div>
+                <div class="divDesc">{{'monthly sell' + (item.saleNum ? item.saleNum : 0)  }}</div>
                 <div class="divBottom"><span>￥</span><span>{{item.price/100}}</span></div>
                 <div class="divNum">
                   <div class="divSubtract" v-if="item.number > 0">
@@ -86,7 +80,7 @@
               <span>{{goodsPrice}}</span>
           </div>
           <div class="divPrice"></div>
-          <div :class="{btnSubmitActive: cartData && cartData.length > 0, btnSubmit:!cartData || cartData.length<1}" @click="toAddOrderPage">去结算</div>
+          <div :class="{btnSubmitActive: cartData && cartData.length > 0, btnSubmit:!cartData || cartData.length<1}" @click="toAddOrderPage">go checking</div>
         </div>
         <van-dialog v-model="dialogFlavor.show" :show-confirm-button="false" class="dialogFlavor" ref="flavorDialog">
           <div class="dialogTitle">{{dialogFlavor.name}}</div>
@@ -102,7 +96,7 @@
           </div>
           <div class="divBottom">
             <div><span class="spanMoney">￥</span>{{dialogFlavor.price/100}}</div>
-            <div @click="dialogFlavorAddCart">加入购物车</div>
+            <div @click="dialogFlavorAddCart">add to cart</div>
           </div>
           <div class="divFlavorClose" @click="dialogFlavor.show = false">
             <img src="./images/close.png"/>
@@ -110,9 +104,9 @@
         </van-dialog>
         <van-popup v-model="cartDialogShow" position="bottom" :style="{ height: '50%' }" class="dialogCart">
           <div class="divCartTitle">
-            <div class="title">购物车</div>
+            <div class="title">cart</div>
             <div class="clear" @click="clearCart">
-              <i class="el-icon-delete"></i> 清空
+              <i class="el-icon-delete"></i> clear
             </div>
           </div>
           <div class="divCartContent">
@@ -208,7 +202,7 @@
                   <div class="divAdd" v-if="setMealDialog.item.number">
                     <img src="./images/add.png" @click="addCart(setMealDialog.item)"/>
                   </div>
-                  <div class="addCart"  @click="addCart(setMealDialog.item)" v-if="!setMealDialog.item.number">加入购物车</div>
+                  <div class="addCart"  @click="addCart(setMealDialog.item)" v-if="!setMealDialog.item.number">add to cart</div>
               </div>
           </div>
           <div class="detailsDialogClose" @click="setMealDialog.show = false">
@@ -216,13 +210,9 @@
           </div>
         </van-dialog>
     </div>
-        <!-- 开发环境版本，包含了有帮助的命令行警告 -->
         <script src="../backend/plugins/vue/vue.js"></script>
-        <!-- 引入组件库 -->
         <script src="../backend/plugins/element-ui/index.js"></script>
-        <!-- 引入vant样式 -->
-        <script src="./js/vant.min.js"></script>        
-        <!-- 引入axios -->
+        <script src="./js/vant.min.js"></script>
         <script src="../backend/plugins/axios/axios.min.js"></script>
         <script src="./js/request.js"></script>
         <script src="./js/common.js"></script>
@@ -233,7 +223,6 @@
           el:'#main',
           data(){
             return {
-              //左边菜品类别index
               activeType:0,
               categoryList:[],
               categoryId:undefined,
@@ -293,10 +282,8 @@
             this.initData()
           },
           methods:{
-            //初始化数据
             initData(){
               Promise.all([categoryListApi(),cartListApi({})]).then(res=>{
-                //获取分类数据
                 if(res[0].code === 1){
                   this.categoryList = res[0].data
                   if(Array.isArray(res[0].data) && res[0].data.length > 0){
@@ -310,7 +297,6 @@
                 }else{
                   this.$notify({ type:'warning', message:res[0].msg});
                 }
-                //获取菜品数据
                 if(res[1].code === 1){
                 this.cartData = res[1].data
                 }else{
@@ -318,17 +304,15 @@
                 }
               })
             },
-            //分类点击
             categoryClick(index,id,type){
               this.activeType = index
               this.categoryId = id
-              if(type === 1){//菜品
+              if(type === 1){
                 this.getDishList()
               }else{
                 this.getSetmealData()
               }
             },
-            //获取菜品数据
             async getDishList(){
               if(!this.categoryId){
                 return
@@ -351,7 +335,7 @@
                 this.$notify({ type:'warning', message:res.msg});
               }
             },
-            //获取套餐数据setmealId
+
             async getSetmealData(){
               if(!this.categoryId){
                 return
@@ -374,7 +358,7 @@
                 this.$notify({ type:'warning', message:res.msg});
               }
             },
-            //获取购物车数据
+
             async getCartData(){
               const res = await cartListApi({})
               if(res.code === 1){
@@ -383,19 +367,19 @@
                 this.$notify({ type:'warning', message:res.msg});
               }
             },
-            //菜单中往购物车中添加商品
+
             async addCart(item){
               let params = {
-                amount:item.price/100,//金额
-                dishFlavor:item.dishFlavor,//口味  如果没有传undefined
-                dishId:undefined,//菜品id
-                setmealId:undefined,//套餐id
+                amount:item.price/100,
+                dishFlavor:item.dishFlavor,
+                dishId:undefined,
+                setmealId:undefined,
                 name:item.name,
                 image:item.image
               }
-              if(Array.isArray(item.flavors)){//表示是菜品
+              if(Array.isArray(item.flavors)){
                 params.dishId = item.id
-              }else{//表示套餐 套餐没有口味
+              }else{
                 params.setmealId = item.id
               }
               const res = await addCartApi(params)
@@ -414,7 +398,7 @@
               }
             },
 
-            //菜单中减少选中的商品
+
             async subtractCart(item){
                 let params = {
                   dishId:item.id,
@@ -440,19 +424,17 @@
                 }
             },
             
-            //展开购物车
             openCart(){
               if(this.cartData.length > 0){
                 this.cartDialogShow = true
               }
             },
-            //购物车中增加商品数量
             async cartNumAdd(item){
               let params = {
-                amount:item.amount,//金额
-                dishFlavor:item.dishFlavor,//口味  如果没有传undefined
-                dishId:item.dishId,//菜品id
-                setmealId:item.setmealId,//套餐id
+                amount:item.amount,
+                dishFlavor:item.dishFlavor,
+                dishId:item.dishId,
+                setmealId:item.setmealId,
                 name:item.name,
                 image:item.image
               }
@@ -469,7 +451,7 @@
                 this.$notify({ type:'warning', message:res.msg});
               }
             },
-            //购物车中减少商品数量
+
             async cartNumberSubtract(item){
               let params = {
                   dishId:item.dishId,
@@ -488,7 +470,6 @@
                 }
             },
             
-            //修改商品列表中的数据number
             changeDishList(item){
               for(let ele of this.dishList){
                 if(ele.id === (item.setmealId || item.dishId)){
@@ -497,7 +478,6 @@
               }
             },
             
-            //清空购物车
             async clearCart(){
                 const res = await clearCartApi()
                 if(res.code === 1){
@@ -510,7 +490,6 @@
                   this.$notify({ type:'warning', message:res.msg});
                 }
             },
-            //点击选择规格
             chooseFlavorClick(item){
               this.dialogFlavor = {
                 name:'',
@@ -530,11 +509,9 @@
             },
             flavorClick(flavor,item){
               flavor.dishFlavor = item
-              //强制刷新dialog的dom
               this.dialogFlavor.show = false
               this.dialogFlavor.show = true
             },
-            //选择规格加入购物车
             dialogFlavorAddCart(){
               const dialogFlavor = this.dialogFlavor
               let flag = true
@@ -544,7 +521,7 @@
                   dishFlavor.push(item.dishFlavor)
                 }else{
                       flag = false
-                      Notify({ type: 'warning', message: '请选择'+ item.name });
+                      Notify({ type: 'warning', message: 'please selete'+ item.name });
                 }
               })
               if(flag){
@@ -560,11 +537,9 @@
               }
               
             },
-            //网络图片路径转换
             imgPathConvert(path){
               return imgPath(path)
             },
-            //跳转到去结算界面
             toAddOrderPage(){
               if(this.cartData.length > 0){
                 window.requestAnimationFrame(()=>{
@@ -578,14 +553,12 @@
               })
             },
             async dishDetails(item){
-              //先清除对象数据，如果不行的话dialog使用v-if
               this.detailsDialog.item = {}
               this.setMealDialog.item = {}
               if(Array.isArray(item.flavors)){
                 this.detailsDialog.item = item
                 this.detailsDialog.show = true
               }else{
-                //显示套餐的数据
                 const res = await setMealDishDetailsApi(item.id)
                 if(res.code === 1){
                   this.setMealDialog.item = {...item,list:res.data}

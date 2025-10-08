@@ -15,11 +15,10 @@ spring:
     database: 0
   cache:
     redis:
-      time-to-live: 1800000 #设置缓存数据的过期时间
+      time-to-live: 1800000
 
 mybatis-plus:
   configuration:
-    #在映射实体或者属性时，将数据库中表名和字段名中的下划线去掉，按照驼峰命名法映射
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
