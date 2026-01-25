@@ -4,7 +4,7 @@
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=no,minimal-ui">
-        <title>Reggie Order System</title>
+        <title>Aura Dining</title>
         <link rel="icon" href="./../images/favico.ico">
         <script src="./../js/base.js"></script>
         <link rel="stylesheet" href="../../backend/plugins/element-ui/index.css" />
@@ -16,15 +16,13 @@
             <div class="divHead">
                 <div class="divTitle">
                     <i class="el-icon-arrow-left" @click="goBack"></i>
-                    Reggie Order System
+                    Aura Dining
                     <img src="./../images/home.png" @click="toMainPage"/>
                 </div>
             </div>
             <div class="divContent">
                 <img src="./../images/success.png"/>
                 <div class="divSuccess">order success</div>
-                <div class="divDesc">estimate arrival time:{{finishTime}}</div>
-                <div class="divDesc1">waiting</div>
                 <div class="btnView" @click="toOrderPage">check order detail</div>
             </div>
         </div>
@@ -35,15 +33,7 @@
         <script>
         new Vue({
             el:"#pay_success",
-            data(){
-                return {
-                    finishTime:''
-                }
-            },
             computed:{},
-            created(){
-                this.getFinishTime()
-            },
             mounted(){},
             methods:{
                 goBack(){
@@ -61,18 +51,7 @@
                         window.location.replace('/front/index.html')
                     })  
                 },
-                getFinishTime(){
-                    let now = new Date()
-                    let hour = now.getHours() +1
-                    let minute = now.getMinutes()
-                    if(hour.toString().length <2){
-                        hour = '0' + hour
-                    }
-                    if(minute.toString().length <2){
-                        minute = '0' + minute
-                    }
-                    this.finishTime = hour + ':' + minute
-                },
+
                 
             }
         })

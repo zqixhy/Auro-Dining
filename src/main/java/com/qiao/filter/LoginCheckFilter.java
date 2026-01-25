@@ -13,13 +13,12 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
- * Filter to check if the user is logged in
+ * Filter to check login status and manage ThreadLocal context
  */
 @WebFilter(urlPatterns = "/*")
 @Slf4j
 public class LoginCheckFilter implements Filter {
 
-    // Path matcher to support wildcard characters
     public static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
     @Override
@@ -27,11 +26,10 @@ public class LoginCheckFilter implements Filter {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
-        // 1. Get the current request URI
         String requestURI = request.getRequestURI();
         log.info("Intercepted request: {}", requestURI);
 
-        // 2. Define the white list paths that do not require login
+        // Define white list
         String[] urls = new String[]{
                 "/employee/login",
                 "/employee/logout",
@@ -52,65 +50,60 @@ public class LoginCheckFilter implements Filter {
                 "/common/download"
         };
 
-        // 3. Check if the current request needs to be handled
+        // Check if the path needs to be handled
         boolean check = check(urls, requestURI);
-
-        // 4. If in white list, release the request
         if (check) {
             log.info("Path {} is in white list, passing...", requestURI);
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 5-1. Check login status for administration (Employee)
-        if (request.getSession().getAttribute("employee") != null) {
-            Long empId = (Long) request.getSession().getAttribute("employee");
-            BaseContext.setCurrentId(empId);
-            log.info("Employee is logged in, id: {}", empId);
-            filterChain.doFilter(request, response);
-            return;
+        // ThreadLocal logic with proper cleanup
+        try {
+            // Check Administration (Employee) login
+            if (request.getSession().getAttribute("employee") != null) {
+                Long empId = (Long) request.getSession().getAttribute("employee");
+                BaseContext.setCurrentId(empId);
+                log.info("Employee logged in, ID: {}", empId);
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            // Check Mobile User login
+            if (request.getSession().getAttribute("user") != null) {
+                Long userId = (Long) request.getSession().getAttribute("user");
+                BaseContext.setCurrentId(userId);
+                log.info("User logged in, ID: {}", userId);
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            // Handle unauthorized access
+            log.info("Unauthorized access to: {}", requestURI);
+            handleUnauthorized(request, response, requestURI);
+
+        } finally {
+            // Cleanup threadLocal to prevent data contamination and memory leaks
+            BaseContext.removeCurrentId();
+            log.debug("ThreadLocal context cleared for URI: {}", requestURI);
         }
+    }
 
-        // 5-2. Check login status for mobile users (User)
-        if (request.getSession().getAttribute("user") != null) {
-            Long userId = (Long) request.getSession().getAttribute("user");
-            BaseContext.setCurrentId(userId);
-            log.info("User is logged in, id: {}", userId);
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // 6. If not logged in, handle the response based on request type
-        log.info("User/Employee not logged in. Handling unauthorized request: {}", requestURI);
-
-        // Check if it's an AJAX/Async request
+    private void handleUnauthorized(HttpServletRequest request, HttpServletResponse response, String uri) throws IOException {
         String xRequestedWith = request.getHeader("X-Requested-With");
         boolean isAjax = "XMLHttpRequest".equals(xRequestedWith);
 
-        if (requestURI.endsWith(".html") && !isAjax) {
-            // For direct page access, redirect to login page
-            log.info("Redirecting to login page...");
+        if (uri.endsWith(".html") && !isAjax) {
             response.sendRedirect("/front/page/login.html");
         } else {
-            // For API data requests, return JSON to trigger frontend interceptor
-            log.info("Returning NOTLOGIN JSON response");
             response.setContentType("application/json;charset=utf-8");
             response.getWriter().write(JSON.toJSONString(R.error("NOTLOGIN")));
         }
     }
 
-    /**
-     * Path matching check
-     * @param urls
-     * @param requestURI
-     * @return
-     */
     public boolean check(String[] urls, String requestURI) {
         for (String url : urls) {
-            boolean match = PATH_MATCHER.match(url, requestURI);
-            if (match) {
-                return true;
-            }
+            if (PATH_MATCHER.match(url, requestURI)) return true;
         }
         return false;
     }

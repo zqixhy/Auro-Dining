@@ -4,7 +4,7 @@
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=no,minimal-ui">
-        <title>Reggie Order System</title>
+        <title>Aura Dining</title>
         <link rel="icon" href="./../images/favico.ico">
         <script src="./../js/base.js"></script>
         <link rel="stylesheet" href="../../backend/plugins/element-ui/index.css" />
@@ -16,7 +16,7 @@
         <div id="add_order" class="app">
             <div class="divHead">
                 <div class="divTitle">
-                    <i class="el-icon-arrow-left" @click="goBack"></i>Reggie Order System
+                    <i class="el-icon-arrow-left" @click="goBack"></i>Aura Dining
                 </div>
             </div>
             <div class="divContent">
@@ -74,7 +74,7 @@
                     <span>{{goodsPrice}}</span>
                 </div>
                 <div class="divPrice"></div>
-                <div :class="{btnSubmitActive: cartData && cartData.length > 0, btnSubmit:!cartData || cartData.length<1}" @click="goToPaySuccess">去支付</div>
+                <div :class="{btnSubmitActive: cartData && cartData.length > 0, btnSubmit:!cartData || cartData.length<1}" @click="goToPaySuccess">place order</div>
               </div>
         </div>
         <script src="../../backend/plugins/vue/vue.js"></script>
