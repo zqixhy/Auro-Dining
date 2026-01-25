@@ -41,7 +41,7 @@
                             <span>{{order.sumNum}} </span><span class="price">￥{{order.amount}}</span>
                         </div>
                         <div class="btn" v-if="order.status === 4">
-                            <div class="btnAgain" @click="addOrderAgain(order)">order more</div>
+                            <div class="btnAgain" @click="addOrderAgain(order)">Reorder</div>
                         </div>
                     </van-cell>
                 </van-list>

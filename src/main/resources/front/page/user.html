@@ -15,7 +15,7 @@
     <div id="user" class="app">
         <div class="divHead">
             <div class="divTitle">
-                <i class="el-icon-arrow-left" @click="goBack"></i>account
+                <i class="el-icon-arrow-left" @click="goBack"></i>Aura Dining
             </div>
             <div class="divUser">
                 <img src="./../images/headPage.png"/>
@@ -56,11 +56,11 @@
                     <span class="price">￥{{order[0].amount}}</span>
                 </div>
                 <div class="btn" v-if="order[0].status === 4">
-                    <div class="btnAgain" @click="addOrderAgain">order more</div>
+                    <div class="btnAgain" @click="addOrderAgain">Reorder</div>
                 </div>
             </div>
             <div class="quitLogin" @click="toPageLogin">
-                logout
+                Logout
             </div>
         </div>
     </div>

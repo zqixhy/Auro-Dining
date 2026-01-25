@@ -16,7 +16,7 @@
         <div id="address_edit" class="app">
             <div class="divHead">
                 <div class="divTitle">
-                    <i class="el-icon-arrow-left" @click="goBack"></i>{{title}}
+                    <i class="el-icon-arrow-left" @click="goBack"></i>Aura Dining
                 </div>
             </div>
             <div class="divContent">
@@ -44,8 +44,8 @@
                     <span>note：</span>
                     <span v-for="(item,index) in labelList" :key="index" @click="form.label = item;activeIndex = index" :class="{spanItem:true,spanActiveSchool:activeIndex === index}">{{item}}</span>
                 </div>
-                <div class="divSave" @click="saveAddress">save</div>
-                <div class="divDelete" @click="deleteAddress" v-if="id">delete</div>
+                <div class="divSave" @click="saveAddress">Save</div>
+                <div class="divDelete" @click="deleteAddress" v-if="id">Delete</div>
             </div>
         </div>
         <script src="../../backend/plugins/vue/vue.js"></script>

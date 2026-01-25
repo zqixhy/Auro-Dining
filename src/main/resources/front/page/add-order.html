@@ -21,16 +21,22 @@
             </div>
             <div class="divContent">
                 <div class="divAddress">
-                    <div @click="toAddressPage">                    
-                        <div class="address">{{address.detail}}</div>
-                        <div class="name">
-                            <span>{{address.consignee}}{{address.sex === '1' ? 'Mr':'Mrs/Miss'}}</span>
-                            <span>{{address.phone}}</span>
+                    <div @click="toAddressPage" class="addressContainer">                    
+                        <div class="addressInfo">
+                            <div class="address">{{address.detail}}</div>
+                            <div class="contactInfo">
+                                <div class="nameSection">
+                                    <span class="name">{{address.consignee}}</span>
+                                    <span class="title">{{address.sex === '1' ? 'Mr' : 'Mrs/Miss'}}</span>
+                                </div>
+                                <div class="phoneSection">
+                                    <span class="phone">{{address.phone}}</span>
+                                </div>
+                            </div>
                         </div>
                         <i class="el-icon-arrow-right"></i>
                     </div>
-                    <div class="divSplit"></div>
-                    <div class="divFinishTime"estimate : {{finishTime}}</div>
+                    <div class="divFinishTime">Estimate: {{finishTime}}</div>
                 </div>
                 <div class="order">
                     <div class="title">order detail</div>
@@ -74,7 +80,7 @@
                     <span>{{goodsPrice}}</span>
                 </div>
                 <div class="divPrice"></div>
-                <div :class="{btnSubmitActive: cartData && cartData.length > 0, btnSubmit:!cartData || cartData.length<1}" @click="goToPaySuccess">place order</div>
+                <div :class="{btnSubmitActive: cartData && cartData.length > 0, btnSubmit:!cartData || cartData.length<1}" @click="goToPaySuccess">Place Order</div>
               </div>
         </div>
         <script src="../../backend/plugins/vue/vue.js"></script>
