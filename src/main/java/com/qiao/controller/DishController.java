@@ -11,15 +11,15 @@ import com.qiao.service.DishService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @RestController
@@ -36,15 +36,8 @@ public class DishController {
     @Autowired
     private CategoryService categoryService;
 
-    @Autowired
-    private RedisTemplate redisTemplate;
-
-    /**
-     * Pagination for Dishes
-     */
     @GetMapping("/page")
     public R<Map<String, Object>> getPage(int page, int pageSize, String name) {
-
         Page<Dish> pageInfo = dishService.page(page, pageSize, name);
 
         List<DishDto> dishDtoList = pageInfo.getContent().stream().map(dish -> {
@@ -70,55 +63,46 @@ public class DishController {
 
     /**
      * Save Dish
+     * Clears all dishCache entries to prevent stale data in the mobile list.
      */
     @PostMapping
+    @CacheEvict(value = "dishCache", allEntries = true)
     public R<String> save(@RequestBody DishDto dishDto){
-        log.info("Add dish: {}", dishDto.toString());
-
+        log.info("Adding new dish: {}", dishDto.toString());
         dishDto.setCreateTime(LocalDateTime.now());
         dishDto.setUpdateTime(LocalDateTime.now());
-        // Note: You should set CreateUser/UpdateUser here from Session like in previous modules
 
         dishService.saveWithFlavor(dishDto);
-
-        String key = "dish_" + dishDto.getCategoryId() + "_1";
-        redisTemplate.delete(key);
-
-        return R.success("add success");
+        return R.success("Dish added successfully");
     }
 
     /**
      * Update Dish
+     * Evicts cache to ensure users see the updated price/status.
      */
     @PutMapping
+    @CacheEvict(value = "dishCache", allEntries = true)
     public R<String> update(@RequestBody DishDto dishDto){
-        log.info(dishDto.toString());
-
+        log.info("Updating dish: {}", dishDto.toString());
         dishDto.setUpdateTime(LocalDateTime.now());
 
         dishService.updateWithFlavor(dishDto);
-
-        redisTemplate.delete("dish_" + dishDto.getCategoryId() + "_1");
-
-        return R.success("update success");
+        return R.success("Dish updated successfully");
     }
 
-    /**
-     * Get Dish by ID (for Edit)
-     */
+
     @GetMapping("/{id}")
     public R<DishDto> getByIdWithDish(@PathVariable Long id){
         DishDto dishDto = dishService.getByIdWithFlavor(id);
         if(dishDto != null){
             return R.success(dishDto);
         }
-        return R.error("failed to get dish info");
+        return R.error("Failed to retrieve dish information");
     }
 
-    /**
-     * Change Status (Bulk)
-     */
+
     @PostMapping("/status/{status}")
+    @CacheEvict(value = "dishCache", allEntries = true)
     public R<String> changeDishStatus(@RequestParam List<Long> ids, @PathVariable Integer status){
         for (Long id : ids) {
             Dish dish = dishService.getById(id);
@@ -126,61 +110,43 @@ public class DishController {
                 dish.setStatus(status);
                 dish.setUpdateTime(LocalDateTime.now());
                 dishService.update(dish);
-
-                // Clear cache for this category
-                redisTemplate.delete("dish_" + dish.getCategoryId() + "_1");
             }
         }
-        return R.success("change status success");
+        return R.success("Status changed successfully");
     }
 
-    /**
-     * Delete Dishes
-     */
+
     @DeleteMapping
+    @CacheEvict(value = "dishCache", allEntries = true)
     public R<String> delete(@RequestParam List<Long> ids) {
         for (Long id : ids) {
-            Dish dish = dishService.getById(id);
-            if(dish != null) {
-                redisTemplate.delete("dish_" + dish.getCategoryId() + "_1");
-                dishService.deleteByIdWithFlavor(id);
-            }
+            dishService.deleteByIdWithFlavor(id);
         }
-        return R.success("delete success");
+        return R.success("Dish deleted successfully");
     }
 
     /**
      * List Dishes (Used by Mobile/User side)
+     * value: Cache name defined in RedisConfig.
+     * key: Dynamic key based on categoryId and status.
      */
     @GetMapping("/list")
+    @Cacheable(value = "dishCache", key = "#dish.categoryId + '_' + #dish.status")
     public R<List<DishDto>> getDishList(Dish dish){
-        List<DishDto> dishDtos = null;
+        // This log only prints when there is a cache miss.
+        log.info("Cache miss for categoryId: {}, querying PostgreSQL...", dish.getCategoryId());
 
-        // Construct Redis Key
-        String key = "dish_" + dish.getCategoryId() + "_" + dish.getStatus();
-
-        // Check Redis
-        dishDtos = (List<DishDto>) redisTemplate.opsForValue().get(key);
-        if(dishDtos != null){
-            return R.success(dishDtos);
-        }
-
-        // Query Database if Cache Miss
         List<Dish> list = dishService.list(dish.getCategoryId(), dish.getStatus());
 
-        dishDtos = list.stream().map(item -> {
+        List<DishDto> dishDtos = list.stream().map(item -> {
             DishDto dishDto = new DishDto();
             BeanUtils.copyProperties(item, dishDto);
 
-            // Set Flavors
             List<DishFlavor> flavors = dishFlavorService.findByDishId(item.getId());
             dishDto.setFlavors(flavors);
 
             return dishDto;
         }).collect(Collectors.toList());
-
-        // Save to Redis
-        redisTemplate.opsForValue().set(key, dishDtos, 60, TimeUnit.MINUTES);
 
         return R.success(dishDtos);
     }

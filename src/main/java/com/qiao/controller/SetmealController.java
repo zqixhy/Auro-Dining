@@ -31,6 +31,7 @@ public class SetmealController {
     @Autowired
     private CategoryService categoryService;
 
+
     @GetMapping("/page")
     public R<Map<String, Object>> getPage(int page, int pageSize, String name) {
         Page<Setmeal> pageInfo = setmealService.page(page, pageSize, name);
@@ -52,24 +53,29 @@ public class SetmealController {
         return R.success(pageData);
     }
 
+    // Evicts all setmealCache entries to maintain consistency.
     @PostMapping
     @CacheEvict(value = "setmealCache", allEntries = true)
     public R<String> save(@RequestBody SetmealDto setmealDto){
+        log.info("Saving setmeal: {}", setmealDto.toString());
         setmealDto.setCreateTime(LocalDateTime.now());
         setmealDto.setUpdateTime(LocalDateTime.now());
 
         setmealService.saveMeal(setmealDto);
-        return R.success("save success");
+        return R.success("Save successful");
     }
 
+    //Clears cache to remove deleted items from user view.
     @DeleteMapping
     @CacheEvict(value = "setmealCache", allEntries = true)
     public R<String> delete(@RequestParam List<Long> ids){
         setmealService.deleteWithDish(ids);
-        return R.success("delete success");
+        return R.success("Delete successful");
     }
 
+    // Clears cache to ensure status changes (e.g., Sold Out) are reflected instantly.
     @PostMapping("/status/{status}")
+    @CacheEvict(value = "setmealCache", allEntries = true)
     public R<String> updateStatus(@RequestParam List<Long> ids, @PathVariable Integer status){
         for (Long id : ids) {
             Setmeal setmeal = setmealService.getById(id);
@@ -79,8 +85,9 @@ public class SetmealController {
                 setmealService.update(setmeal);
             }
         }
-        return R.success("change status success");
+        return R.success("Status update successful");
     }
+
 
     @GetMapping("/{id}")
     public R<SetmealDto> getById(@PathVariable Long id){
@@ -88,18 +95,24 @@ public class SetmealController {
         return R.success(setmealDto);
     }
 
+
     @PutMapping
     @CacheEvict(value = "setmealCache", allEntries = true)
     public R<String> update(@RequestBody SetmealDto setmealDto){
+        log.info("Updating setmeal: {}", setmealDto.toString());
         setmealDto.setUpdateTime(LocalDateTime.now());
         setmealService.updateWithDish(setmealDto);
-        return R.success("update success");
+        return R.success("Update successful");
     }
 
+    /**
+     * List Setmeals for Mobile Client
+     * Caches the result using a composite key of categoryId and status.
+     */
     @GetMapping("/list")
     @Cacheable(value = "setmealCache", key = "#setmeal.categoryId + '_' + #setmeal.status")
     public R<List<Setmeal>> getList(Setmeal setmeal){
-        // Note: Modified cache key to be unique per status
+        log.info("Cache miss for setmeal list, querying PostgreSQL for category: {}", setmeal.getCategoryId());
         List<Setmeal> list = setmealService.list(setmeal);
         return R.success(list);
     }
