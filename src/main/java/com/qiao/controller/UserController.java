@@ -51,8 +51,15 @@ public class UserController {
      */
     @PostMapping("/login")
     public R<User> login(HttpServletRequest request, @RequestBody Map map){
-        String phone = map.get("phone").toString();
-        String code = map.get("code").toString();
+        Object phoneObj = map.get("phone");
+        Object codeObj = map.get("code");
+        
+        if(phoneObj == null || codeObj == null){
+            return R.error("Login failed: Phone or code is missing");
+        }
+        
+        String phone = phoneObj.toString();
+        String code = codeObj.toString();
 
         log.info("Attempting login: phone={}, code={}", phone, code);
 

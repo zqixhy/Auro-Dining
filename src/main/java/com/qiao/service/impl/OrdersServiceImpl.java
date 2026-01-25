@@ -53,7 +53,14 @@ public class OrdersServiceImpl implements OrdersService {
         }
 
         User user = userService.getById(userId);
+        if (user == null) {
+            throw new CustomException("User not found");
+        }
+        
         AddressBook addressBook = addressBookService.getById(orders.getAddressBookId());
+        if (addressBook == null) {
+            throw new CustomException("Address not found");
+        }
 
         // 2. 准备订单主表数据 (不要手动 set ID)
         orders.setNumber(UUID.randomUUID().toString().replace("-", "")); // 使用唯一编号
@@ -61,7 +68,7 @@ public class OrdersServiceImpl implements OrdersService {
         orders.setCheckoutTime(LocalDateTime.now());
         orders.setStatus(2);
         orders.setUserId(userId);
-        orders.setUserName(user.getName());
+        orders.setUserName(user.getName() != null ? user.getName() : "");
         orders.setConsignee(addressBook.getConsignee());
         orders.setPhone(addressBook.getPhone());
         orders.setAddress((addressBook.getProvinceName() == null ? "" : addressBook.getProvinceName())

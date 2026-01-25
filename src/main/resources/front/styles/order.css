@@ -90,19 +90,37 @@
 
 #order .divBody .item .result {
   display: flex;
-  justify-content: flex-end;
-  height: 20rem;
-  opacity: 1;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rem 0;
+  border-top: 1px solid #efefef;
+  margin-top: 8rem;
+}
+
+#order .divBody .item .result .resultItem {
+  display: flex;
+  align-items: center;
+  gap: 8rem;
+}
+
+#order .divBody .item .result .resultLabel {
   font-size: 14rem;
   font-family: PingFangSC, PingFangSC-Regular;
   font-weight: 400;
-  text-align: left;
   color: #666666;
-  line-height: 20rem;
 }
 
-#order .divBody .item .result .price {
-  color: #343434;
+#order .divBody .item .result .resultValue {
+  font-size: 16rem;
+  font-family: PingFangSC, PingFangSC-Regular;
+  font-weight: 500;
+  color: #333333;
+}
+
+#order .divBody .item .result .resultValue.price {
+  font-size: 18rem;
+  font-weight: 600;
+  color: #e94e3c;
 }
 
 #order .divBody .item .btn {
