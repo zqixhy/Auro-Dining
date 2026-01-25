@@ -28,9 +28,6 @@ public class AddressBook implements Serializable {
     // Phone Number
     private String phone;
 
-    // Gender: 0 Female, 1 Male
-    private Integer sex;
-
     // Area Codes
     private String provinceCode;
     private String provinceName;

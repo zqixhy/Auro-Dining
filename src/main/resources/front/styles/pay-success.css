@@ -81,7 +81,8 @@
 }
 
 #pay_success .divContent .btnView {
-  width: 200rem;
+  min-width: 240rem;
+  max-width: 90%;
   height: 44rem;
   opacity: 1;
   background: linear-gradient(135deg, #ffc200 0%, #ffaa00 100%);
@@ -98,9 +99,10 @@
   transition: all 0.3s ease;
   cursor: pointer;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 0 20rem;
+  padding: 0 24rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #pay_success .divContent .btnView:active {

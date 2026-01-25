@@ -52,8 +52,14 @@
                     </div>
                 </div>
                 <div class="result">
-                    <span>{{order[0].sumNum}}, </span>
-                    <span class="price">￥{{order[0].amount}}</span>
+                    <div class="resultItem">
+                        <span class="resultLabel">Items:</span>
+                        <span class="resultValue">{{order[0].sumNum}}</span>
+                    </div>
+                    <div class="resultItem">
+                        <span class="resultLabel">Total:</span>
+                        <span class="resultValue price">${{order[0].amount}}</span>
+                    </div>
                 </div>
                 <div class="btn" v-if="order[0].status === 4">
                     <div class="btnAgain" @click="addOrderAgain">Reorder</div>
@@ -143,7 +149,7 @@
                             str =  'pending'
                         break;
                         case 2:
-                            str =  'sending'
+                            str =  'processing'
                         break;
                         case 3:
                             str =  'sent'

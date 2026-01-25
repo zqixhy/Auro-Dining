@@ -8,54 +8,90 @@
 #main .divHead {
   background: url(../images/mainBg.png);
   background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
   height: 152rem;
-  background-size: contain;
+  position: relative;
 }
 
 #main .divHead img {
   position: absolute;
-  left: 19rem;
-  top: 41rem;
-  width: 28rem;
-  height: 28rem;
+  left: 20rem;
+  top: 50rem;
+  width: 32rem;
+  height: 32rem;
+  z-index: 10;
 }
 
 #main .divTitle {
-  width: 345rem;
-  height: 118rem;
-  opacity: 1;
-  background: #ffffff;
-  border-radius: 6rem;
-  box-shadow: 0rem 2rem 5rem 0rem rgba(69, 69, 69, 0.1);
+  width: auto;
+  height: auto;
   position: absolute;
-  left: 50%;
-  top: 77rem;
-  transform: translate(-50%, 0);
+  right: 20rem;
+  top: 50rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0;
   box-sizing: border-box;
-  padding: 14rem 0 0 8rem;
+  margin: 0;
+  background: transparent;
+  border: none;
 }
+
 #main .divTitle .divStatic {
   display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-direction: row;
+  gap: 8rem;
+  padding: 0;
+  width: auto;
+  box-sizing: border-box;
 }
+
 #main .divTitle .divStatic .logo {
-  width: 39rem;
-  height: 39rem;
+  width: 36rem;
+  height: 36rem;
   opacity: 1;
-  background: #333333;
-  border-radius: 6rem;
-  margin-right: 10rem;
+  background: transparent;
+  border-radius: 0;
+  flex-shrink: 0;
+  box-shadow: none;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#main .divTitle .divStatic .logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+#main .divTitle .divStatic .divDesc {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
 }
 
 #main .divTitle .divStatic .divDesc .divName {
-  width: 90rem;
-  height: 25rem;
+  width: auto;
+  height: auto;
   opacity: 1;
   font-size: 18rem;
-  font-family: PingFangSC, PingFangSC-Regular;
-  font-weight: 500;
-  text-align: left;
-  color: #20232a;
-  line-height: 25rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', PingFangSC, PingFangSC-Regular;
+  font-weight: 600;
+  text-align: right;
+  color: #ffffff;
+  line-height: 36rem;
+  letter-spacing: 0.5px;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 #main .divTitle .divStatic .divDesc .divSend {
@@ -92,23 +128,26 @@
   color: #9b9b9b;
   line-height: 17rem;
   margin-right: 18rem;
-  padding-top: 9rem;
-  border-top: 1rem dashed #ebebeb;
+  padding-top: 0;
+  border-top: none;
+  display: none;
 }
 
 #main .divBody {
   display: flex;
-  height: 100%;
+  height: calc(100% - 152rem);
+  margin-top: 0;
 }
 
 #main .divBody .divType {
-  background: #f6f6f6;
+  background: #f5f5f7;
 }
 
 #main .divBody .divType ul {
-  margin-top: 61rem;
+  margin-top: 0;
   overflow-y: auto;
-  height: calc(100% - 61rem);
+  height: 100%;
+  padding-top: 10rem;
   padding-bottom: 200rem;
   box-sizing: border-box;
   width: 84rem;
@@ -144,9 +183,10 @@
 }
 
 #main .divBody .divMenu > div {
-  margin-top: 61rem;
+  margin-top: 0;
   overflow-y: auto;
-  height: calc(100% - 61rem);
+  height: 100%;
+  padding-top: 10rem;
   padding-bottom: 200rem;
   box-sizing: border-box;
 }
