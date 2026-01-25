@@ -1,10 +1,8 @@
 package com.qiao.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
-import com.qiao.dto.SetmealDto;
 import com.qiao.entity.SetmealDish;
+import java.util.List;
 
-public interface SetmealDishService extends IService<SetmealDish> {
-
-
+public interface SetmealDishService {
+    void saveBatch(List<SetmealDish> setmealDishes);
 }

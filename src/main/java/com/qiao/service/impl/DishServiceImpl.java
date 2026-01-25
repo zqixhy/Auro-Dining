@@ -1,83 +1,119 @@
 package com.qiao.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qiao.dto.DishDto;
 import com.qiao.entity.Dish;
 import com.qiao.entity.DishFlavor;
-import com.qiao.mapper.DishMapper;
+import com.qiao.repository.DishRepository;
 import com.qiao.service.DishFlavorService;
 import com.qiao.service.DishService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
-public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements DishService{
+public class DishServiceImpl implements DishService {
+
+    @Autowired
+    private DishRepository dishRepository;
 
     @Autowired
     private DishFlavorService dishFlavorService;
 
+    /**
+     * Save new dish and its flavors
+     */
+    @Override
     @Transactional
     public void saveWithFlavor(DishDto dishDto) {
-        this.save(dishDto);
+        // Save dish info to get the ID
+        Dish dish = dishRepository.save(dishDto);
 
-        Long dishId = dishDto.getId();
+        Long dishId = dish.getId();
 
+        // Set dishId for all flavors
         List<DishFlavor> flavors = dishDto.getFlavors();
-        flavors.forEach(flavor -> flavor.setDishId(dishId));
+        flavors = flavors.stream().map((item) -> {
+            item.setDishId(dishId);
+            return item;
+        }).collect(Collectors.toList());
 
         dishFlavorService.saveBatch(flavors);
     }
 
-    @Override
-    public void updateWithFlavor(DishDto dishDto) {
-        this.updateById(dishDto);
-
-        LambdaQueryWrapper<DishFlavor> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(DishFlavor::getDishId,dishDto.getId());
-
-        dishFlavorService.remove(lqw);
-
-        List<DishFlavor> flavors = dishDto.getFlavors();
-        flavors.forEach(flavor -> flavor.setDishId(dishDto.getId()));
-
-        dishFlavorService.saveBatch(flavors);
-
-
-    }
-
+    /**
+     * Get dish details + flavors
+     */
     @Override
     public DishDto getByIdWithFlavor(Long id) {
-        Dish dish = this.getById(id);
+        Dish dish = dishRepository.findById(id).orElse(null);
+        if (dish == null) return null;
 
         DishDto dishDto = new DishDto();
-        BeanUtils.copyProperties(dish,dishDto);
+        BeanUtils.copyProperties(dish, dishDto);
 
-        LambdaQueryWrapper<DishFlavor> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(DishFlavor::getDishId,dish.getId());
-        List<DishFlavor> flavors = dishFlavorService.list(lqw);
+        List<DishFlavor> flavors = dishFlavorService.findByDishId(id);
         dishDto.setFlavors(flavors);
 
         return dishDto;
     }
 
-
+    /**
+     * Update dish and flavors
+     */
     @Override
-    public void deleteByIdWithFlavor(Long id) {
-        this.removeById(id);
+    @Transactional
+    public void updateWithFlavor(DishDto dishDto) {
+        dishRepository.save(dishDto);
 
-        LambdaQueryWrapper<DishFlavor> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(DishFlavor::getDishId,id);
-        dishFlavorService.remove(lqw);
+        // Clear old flavors
+        dishFlavorService.deleteByDishId(dishDto.getId());
 
+        // Add new flavors
+        List<DishFlavor> flavors = dishDto.getFlavors();
+        flavors = flavors.stream().map((item) -> {
+            item.setDishId(dishDto.getId());
+            return item;
+        }).collect(Collectors.toList());
+
+        dishFlavorService.saveBatch(flavors);
     }
 
+    @Override
+    public Dish getById(Long id) {
+        return dishRepository.findById(id).orElse(null);
+    }
 
+    @Override
+    public void update(Dish dish) {
+        dishRepository.save(dish);
+    }
 
+    @Override
+    @Transactional
+    public void deleteByIdWithFlavor(Long id) {
+        dishFlavorService.deleteByDishId(id);
+        dishRepository.deleteById(id);
+    }
+
+    @Override
+    public Page<Dish> page(int page, int pageSize, String name) {
+        Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by("updateTime").descending());
+        if(name != null && !name.isEmpty()){
+            return dishRepository.findByNameContaining(name, pageable);
+        }
+        return dishRepository.findAll(pageable);
+    }
+
+    @Override
+    public List<Dish> list(Long categoryId, Integer status) {
+        return dishRepository.findByCategoryIdAndStatusOrderBySortAscUpdateTimeDesc(categoryId, status);
+    }
 }

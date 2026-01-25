@@ -1,18 +1,23 @@
 package com.qiao.entity;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
-
+import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Dish Entity
+ */
 @Data
+@Entity
+@Table(name = "dish")
 public class Dish implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
@@ -27,20 +32,17 @@ public class Dish implements Serializable {
 
     private String description;
 
+    // Status: 0 Disabled, 1 Enabled
     private Integer status;
 
     private Integer sort;
 
-    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
-    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
-    @TableField(fill = FieldFill.INSERT)
     private Long createUser;
 
-    @TableField(fill = FieldFill.INSERT_UPDATE)
     private Long updateUser;
 
     private Integer isDeleted;

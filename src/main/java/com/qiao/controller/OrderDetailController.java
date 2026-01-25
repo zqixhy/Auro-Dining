@@ -2,7 +2,9 @@ package com.qiao.controller;
 
 import com.qiao.common.R;
 import com.qiao.entity.OrderDetail;
+import com.qiao.repository.OrderDetailRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,8 +15,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/orderDetail")
 public class OrderDetailController {
 
-/*    @GetMapping("/{id}")
+    @Autowired
+    private OrderDetailRepository orderDetailRepository;
+
+    @GetMapping("/{id}")
     public R<OrderDetail> get(@PathVariable Long id){
-        return null;
-    }*/
+        log.info("Querying order detail for id: {}", id);
+        OrderDetail orderDetail = orderDetailRepository.findById(id).orElse(null);
+
+        if (orderDetail != null) {
+            return R.success(orderDetail);
+        }
+        return R.error("Order detail not found");
+    }
 }

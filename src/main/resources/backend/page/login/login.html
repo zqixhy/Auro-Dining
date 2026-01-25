@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reggie Order System</title>
+  <title>Restaurant Management System</title>
   <link rel="shortcut icon" href="../../favicon.ico">
   <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
   <link rel="stylesheet" href="../../styles/common.css">
@@ -96,7 +96,7 @@
             if (valid) {
               this.loading = true
               let res = await loginApi(this.loginForm)
-              if (String(res.code) === '1') {
+              if (String(res.code) === '1') {   // 1: success login
                 localStorage.setItem('userInfo',JSON.stringify(res.data))
                 window.location.href= '/backend/index.html'
               } else {

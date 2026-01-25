@@ -1,7 +1,5 @@
 package com.qiao.controller;
 
-
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.qiao.common.BaseContext;
 import com.qiao.common.R;
 import com.qiao.entity.ShoppingCart;
@@ -10,8 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.http.HttpRequest;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -22,85 +18,40 @@ public class ShoppingCartController {
     @Autowired
     private ShoppingCartService shoppingCartService;
 
+    /**
+     * Get cart list for current user
+     */
     @GetMapping("/list")
-    public R<List<ShoppingCart>> getList(ShoppingCart shoppingCart){
-        LambdaQueryWrapper<ShoppingCart> lqw = new LambdaQueryWrapper<>();
-
-        lqw.eq(ShoppingCart::getUserId,BaseContext.getCurrentId());
-        lqw.orderByAsc(ShoppingCart::getCreateTime);
-        List<ShoppingCart> list = shoppingCartService.list(lqw);
+    public R<List<ShoppingCart>> list() {
+        List<ShoppingCart> list = shoppingCartService.list(BaseContext.getCurrentId());
         return R.success(list);
-
     }
 
+    /**
+     * Add item to cart
+     */
     @PostMapping("/add")
-    public R<ShoppingCart> save(@RequestBody ShoppingCart shoppingCart){
-        log.info(shoppingCart.toString());
-
-        Long userId = BaseContext.getCurrentId();
-        shoppingCart.setUserId(userId);
-        Long dishId = shoppingCart.getDishId();
-        String dishFlavor = shoppingCart.getDishFlavor();
-
-        LambdaQueryWrapper<ShoppingCart> lqw = new LambdaQueryWrapper<>();
-
-        lqw.eq(ShoppingCart::getUserId,userId);
-
-        if(null != dishId){
-            lqw.eq(ShoppingCart::getDishId,dishId).eq(dishFlavor !=null,ShoppingCart::getDishFlavor,dishFlavor);
-        } else {
-            lqw.eq(ShoppingCart::getSetmealId,shoppingCart.getSetmealId());
-        }
-
-        ShoppingCart one = shoppingCartService.getOne(lqw);
-
-        if(null != one){
-            one.setNumber(one.getNumber()+1);
-            shoppingCartService.updateById(one);
-        } else{
-            shoppingCart.setNumber(1);
-            shoppingCart.setCreateTime(LocalDateTime.now());
-            shoppingCartService.save(shoppingCart);
-            one = shoppingCart;
-        }
-
-        return R.success(one);
+    public R<ShoppingCart> add(@RequestBody ShoppingCart shoppingCart) {
+        shoppingCart.setUserId(BaseContext.getCurrentId());
+        ShoppingCart cartItem = shoppingCartService.add(shoppingCart);
+        return R.success(cartItem);
     }
 
-    @DeleteMapping("/clean")
-    public R<String> clean(){
-        LambdaQueryWrapper<ShoppingCart> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(ShoppingCart::getUserId,BaseContext.getCurrentId());
-        shoppingCartService.remove(lqw);
-        return R.success("delete success");
-
-    }
-
+    /**
+     * Remove one item or decrease number
+     */
     @PostMapping("/sub")
-    public R<String> update(@RequestBody ShoppingCart shoppingCart){
-        Long dishId = shoppingCart.getDishId();
-
-        LambdaQueryWrapper<ShoppingCart> lqw = new LambdaQueryWrapper<>();
-
-        lqw.eq(ShoppingCart::getUserId,BaseContext.getCurrentId());
-
-        if(dishId != null){
-            lqw.eq(ShoppingCart::getDishId,dishId);
-        } else {
-            lqw.eq(ShoppingCart::getSetmealId,shoppingCart.getSetmealId());
-        }
-
-        ShoppingCart item = shoppingCartService.getOne(lqw);
-        Integer number = item.getNumber();
-        if(number > 1){
-            item.setNumber(item.getNumber()-1);
-            shoppingCartService.updateById(item);
-        }else {
-            shoppingCartService.removeById(item);
-        }
-
+    public R<String> sub(@RequestBody ShoppingCart shoppingCart) {
+        shoppingCartService.sub(shoppingCart, BaseContext.getCurrentId());
         return R.success("update success");
-
     }
 
+    /**
+     * Clean all items in cart
+     */
+    @DeleteMapping("/clean")
+    public R<String> clean() {
+        shoppingCartService.clean(BaseContext.getCurrentId());
+        return R.success("delete success");
+    }
 }

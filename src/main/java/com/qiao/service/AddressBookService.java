@@ -1,7 +1,21 @@
 package com.qiao.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.qiao.entity.AddressBook;
+import java.util.List;
 
-public interface AddressBookService extends IService<AddressBook> {
+public interface AddressBookService {
+
+    AddressBook save(AddressBook addressBook);
+
+    List<AddressBook> list(AddressBook addressBook);
+
+    AddressBook getById(Long id);
+
+    void update(AddressBook addressBook);
+
+    void delete(Long id);
+
+    void setDefault(AddressBook addressBook);
+
+    AddressBook getDefault(Long userId);
 }

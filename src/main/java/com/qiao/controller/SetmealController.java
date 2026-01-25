@@ -1,7 +1,5 @@
 package com.qiao.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qiao.common.R;
 import com.qiao.dto.SetmealDto;
 import com.qiao.entity.Category;
@@ -13,10 +11,14 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
@@ -30,102 +32,75 @@ public class SetmealController {
     private CategoryService categoryService;
 
     @GetMapping("/page")
-    public R<Page> getPage(int page,int pageSize,String name){
-        Page<Setmeal> setmealPage = new Page<>(page, pageSize);
-        Page<SetmealDto> setmealDtoPage = new Page<>();
+    public R<Map<String, Object>> getPage(int page, int pageSize, String name) {
+        Page<Setmeal> pageInfo = setmealService.page(page, pageSize, name);
 
-        LambdaQueryWrapper<Setmeal> lqw = new LambdaQueryWrapper<Setmeal>();
-        lqw.like(name != null,Setmeal::getName,name);
-        lqw.orderByDesc(Setmeal::getUpdateTime);
-
-        setmealService.page(setmealPage,lqw);
-
-        BeanUtils.copyProperties(setmealPage,setmealDtoPage,"records");
-
-        List<Setmeal> records = setmealPage.getRecords();
-
-        List<SetmealDto> setmealDtos = new ArrayList<>();
-
-        records.forEach(setmeal ->
-        {
-            SetmealDto setmealDto = new SetmealDto();
-            BeanUtils.copyProperties(setmeal,setmealDto);
-
-            Category category = categoryService.getById(setmeal.getCategoryId());
-
-            if(category != null){
-                setmealDto.setCategoryName(category.getName());
+        List<SetmealDto> dtoList = pageInfo.getContent().stream().map(item -> {
+            SetmealDto dto = new SetmealDto();
+            BeanUtils.copyProperties(item, dto);
+            Category category = categoryService.getById(item.getCategoryId());
+            if (category != null) {
+                dto.setCategoryName(category.getName());
             }
+            return dto;
+        }).collect(Collectors.toList());
 
-            setmealDtos.add(setmealDto);
-        });
+        Map<String, Object> pageData = new HashMap<>();
+        pageData.put("records", dtoList);
+        pageData.put("total", pageInfo.getTotalElements());
 
-        setmealDtoPage.setRecords(setmealDtos);
-
-        return R.success(setmealDtoPage);
-
+        return R.success(pageData);
     }
 
     @PostMapping
-    @CacheEvict(value = "setmealCache",allEntries = true)
+    @CacheEvict(value = "setmealCache", allEntries = true)
     public R<String> save(@RequestBody SetmealDto setmealDto){
+        setmealDto.setCreateTime(LocalDateTime.now());
+        setmealDto.setUpdateTime(LocalDateTime.now());
+
         setmealService.saveMeal(setmealDto);
         return R.success("save success");
-
-    }
-
-    @GetMapping("/{id}")
-    public R<SetmealDto> getByIdWithDish(@PathVariable Long id){
-        SetmealDto setmealDto = setmealService.getByIdWithDish(id);
-        return R.success(setmealDto);
-
-    }
-
-    @PutMapping
-    @CacheEvict(value = "setmealCache",allEntries = true)
-    public R<String> update(@RequestBody SetmealDto setmealDto){
-        setmealService.updateWithDish(setmealDto);
-        return R.success("update success");
     }
 
     @DeleteMapping
-    @CacheEvict(value = "setmealCache",allEntries = true)
-    public R<String> deleteWithDish(@RequestParam List<Long> ids){
-
+    @CacheEvict(value = "setmealCache", allEntries = true)
+    public R<String> delete(@RequestParam List<Long> ids){
         setmealService.deleteWithDish(ids);
-
         return R.success("delete success");
     }
 
     @PostMapping("/status/{status}")
-    public R<String> updateStatus(@RequestParam List<Long> ids,@PathVariable Integer status){
-        ids.forEach(id -> {
+    public R<String> updateStatus(@RequestParam List<Long> ids, @PathVariable Integer status){
+        for (Long id : ids) {
             Setmeal setmeal = setmealService.getById(id);
-            setmeal.setStatus(status);
-            setmealService.updateById(setmeal);
-        });
-
+            if(setmeal != null){
+                setmeal.setStatus(status);
+                setmeal.setUpdateTime(LocalDateTime.now());
+                setmealService.update(setmeal);
+            }
+        }
         return R.success("change status success");
     }
 
-    @GetMapping("/list")
-    @Cacheable(value = "setmealCache",key = "#categoryId")
-    public R<List<Setmeal>> getList(Long categoryId){
-        LambdaQueryWrapper<Setmeal> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(Setmeal::getCategoryId,categoryId);
-        lqw.orderByDesc(Setmeal::getUpdateTime);
-        List<Setmeal> list = setmealService.list(lqw);
+    @GetMapping("/{id}")
+    public R<SetmealDto> getById(@PathVariable Long id){
+        SetmealDto setmealDto = setmealService.getByIdWithDish(id);
+        return R.success(setmealDto);
+    }
 
+    @PutMapping
+    @CacheEvict(value = "setmealCache", allEntries = true)
+    public R<String> update(@RequestBody SetmealDto setmealDto){
+        setmealDto.setUpdateTime(LocalDateTime.now());
+        setmealService.updateWithDish(setmealDto);
+        return R.success("update success");
+    }
+
+    @GetMapping("/list")
+    @Cacheable(value = "setmealCache", key = "#setmeal.categoryId + '_' + #setmeal.status")
+    public R<List<Setmeal>> getList(Setmeal setmeal){
+        // Note: Modified cache key to be unique per status
+        List<Setmeal> list = setmealService.list(setmeal);
         return R.success(list);
     }
-
-    @GetMapping("/dish/{id}")
-    public R<SetmealDto> getSetMealList(@PathVariable Long id){
-        SetmealDto setmealDto = setmealService.getByIdWithDish(id);
-
-        return R.success(setmealDto);
-
-
-    }
-
 }

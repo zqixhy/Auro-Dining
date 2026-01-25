@@ -1,83 +1,123 @@
 package com.qiao.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qiao.common.CustomException;
 import com.qiao.dto.SetmealDto;
 import com.qiao.entity.Setmeal;
 import com.qiao.entity.SetmealDish;
-import com.qiao.mapper.SetmealMapper;
-import com.qiao.service.SetmealDishService;
+import com.qiao.repository.SetmealDishRepository;
+import com.qiao.repository.SetmealRepository;
 import com.qiao.service.SetmealService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
-public class SetmealServiceImpl extends ServiceImpl<SetmealMapper, Setmeal> implements SetmealService {
+public class SetmealServiceImpl implements SetmealService {
 
     @Autowired
-    private SetmealDishService setmealDishService;
+    private SetmealRepository setmealRepository;
 
+    @Autowired
+    private SetmealDishRepository setmealDishRepository;
+
+    /**
+     * Save new Setmeal
+     */
     @Override
+    @Transactional
     public void saveMeal(SetmealDto setmealDto) {
-        this.save(setmealDto);
+        Setmeal setmeal = setmealRepository.save(setmealDto);
 
-        Long id = setmealDto.getId();
+        // Save dishes
         List<SetmealDish> setmealDishes = setmealDto.getSetmealDishes();
-        setmealDishes.forEach(setmealDish -> setmealDish.setSetmealId(id.toString()));
+        setmealDishes.forEach(item -> item.setSetmealId(setmeal.getId().toString()));
 
-        setmealDishService.saveBatch(setmealDishes);
-
+        setmealDishRepository.saveAll(setmealDishes);
     }
 
+    /**
+     * Get Setmeal + Dishes (for edit)
+     */
     @Override
     public SetmealDto getByIdWithDish(Long id) {
-        Setmeal setmeal = this.getById(id);
+        Setmeal setmeal = setmealRepository.findById(id).orElse(null);
+        if(setmeal == null) return null;
+
         SetmealDto setmealDto = new SetmealDto();
+        BeanUtils.copyProperties(setmeal, setmealDto);
 
-        BeanUtils.copyProperties(setmeal,setmealDto);
-
-        LambdaQueryWrapper<SetmealDish> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(SetmealDish::getSetmealId,id.toString());
-        List<SetmealDish> setmealDishes = setmealDishService.list(lqw);
-        setmealDto.setSetmealDishes(setmealDishes);
+        List<SetmealDish> dishes = setmealDishRepository.findBySetmealId(id.toString());
+        setmealDto.setSetmealDishes(dishes);
 
         return setmealDto;
     }
 
+    /**
+     * Update Setmeal
+     */
     @Override
+    @Transactional
     public void updateWithDish(SetmealDto setmealDto) {
-        this.updateById(setmealDto);
+        setmealRepository.save(setmealDto);
 
-        LambdaQueryWrapper<SetmealDish> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(SetmealDish::getSetmealId,setmealDto.getId().toString());
-        setmealDishService.remove(lqw);
+        setmealDishRepository.deleteBySetmealId(setmealDto.getId().toString());
 
-        List<SetmealDish> setmealDishes = setmealDto.getSetmealDishes();
-        setmealDishes.forEach(setmealDish -> setmealDish.setSetmealId(setmealDto.getId().toString()));
+        List<SetmealDish> dishes = setmealDto.getSetmealDishes();
+        dishes.forEach(item -> item.setSetmealId(setmealDto.getId().toString()));
 
-        setmealDishService.saveBatch(setmealDishes);
-
-
+        setmealDishRepository.saveAll(dishes);
     }
 
+    /**
+     * Delete Setmeal (Check status first)
+     */
     @Override
+    @Transactional
     public void deleteWithDish(List<Long> ids) {
-
-        LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.in(Setmeal::getId,ids).eq(Setmeal::getStatus,1);
-        if(this.count(queryWrapper) > 0){
-            throw new CustomException("the combo is on sale, take it off the shelf first");
+        // heck if any setmeal is "On Sale" (status = 1)
+        List<Setmeal> setmeals = setmealRepository.findAllById(ids);
+        for (Setmeal s : setmeals) {
+            if (s.getStatus() == 1) {
+                throw new CustomException("Combo is on sale, cannot delete!");
+            }
         }
 
-        this.removeByIds(ids);
-        LambdaQueryWrapper<SetmealDish> lqw = new LambdaQueryWrapper<>();
-        lqw.in(SetmealDish::getSetmealId,ids);
-        setmealDishService.remove(lqw);
+        setmealRepository.deleteAllById(ids);
+
+        // Delete related dishes (Convert Long IDs to String IDs)
+        List<String> stringIds = ids.stream().map(String::valueOf).collect(Collectors.toList());
+        setmealDishRepository.deleteBySetmealIdIn(stringIds);
     }
 
+    @Override
+    public Page<Setmeal> page(int page, int pageSize, String name) {
+        Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by("updateTime").descending());
+        if(name != null){
+            return setmealRepository.findByNameContaining(name, pageable);
+        }
+        return setmealRepository.findAll(pageable);
+    }
 
+    @Override
+    public List<Setmeal> list(Setmeal setmeal) {
+        return setmealRepository.findByCategoryId(setmeal.getCategoryId());
+    }
+
+    @Override
+    public Setmeal getById(Long id) {
+        return setmealRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public void update(Setmeal setmeal) {
+        setmealRepository.save(setmeal);
+    }
 }

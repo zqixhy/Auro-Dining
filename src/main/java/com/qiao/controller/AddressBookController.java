@@ -1,9 +1,5 @@
 package com.qiao.controller;
 
-
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.qiao.common.BaseContext;
 import com.qiao.common.R;
 import com.qiao.entity.AddressBook;
 import com.qiao.service.AddressBookService;
@@ -11,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -19,70 +17,97 @@ import java.util.List;
 public class AddressBookController {
 
     @Autowired
-    AddressBookService addressBookService;
+    private AddressBookService addressBookService;
 
+    /**
+     * Get all addresses for the current user
+     */
     @GetMapping("/list")
-    public R<List<AddressBook>> getList(AddressBook addressBook){
-        Long userId = BaseContext.getCurrentId();
+    public R<List<AddressBook>> getList(HttpServletRequest request, AddressBook addressBook){
+        // Get current user ID from Session
+        Long userId = (Long) request.getSession().getAttribute("user");
         addressBook.setUserId(userId);
-        LambdaQueryWrapper<AddressBook> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(null != userId,AddressBook::getUserId,userId);
-        lqw.orderByDesc(AddressBook::getUpdateTime);
 
-        List<AddressBook> list = addressBookService.list(lqw);
+        List<AddressBook> list = addressBookService.list(addressBook);
         return R.success(list);
-
     }
 
+    /**
+     * Add a new address
+     */
     @PostMapping
-    public R<String> save(@RequestBody AddressBook addressBook){
-        addressBook.setUserId(BaseContext.getCurrentId());
+    public R<String> save(HttpServletRequest request, @RequestBody AddressBook addressBook){
+        // Set User ID
+        Long userId = (Long) request.getSession().getAttribute("user");
+        addressBook.setUserId(userId);
+
+        // Manually populate audit fields (since MyBatis Plus auto-fill is removed)
+        addressBook.setCreateTime(LocalDateTime.now());
+        addressBook.setUpdateTime(LocalDateTime.now());
+        addressBook.setCreateUser(userId);
+        addressBook.setUpdateUser(userId);
+
         addressBookService.save(addressBook);
-        return R.success("save success");
+        return R.success("Save success");
     }
 
+    /**
+     * Get address by ID
+     */
     @GetMapping("/{id}")
     public R<AddressBook> get(@PathVariable Long id){
         AddressBook addressBook = addressBookService.getById(id);
-        if(null != addressBook){
+        if(addressBook != null){
             return R.success(addressBook);
         }
-
-        return R.error("get addressbook failed");
-
+        return R.error("Address not found");
     }
 
+    /**
+     * Update address
+     */
     @PutMapping
-    public R<String> update(@RequestBody AddressBook addressBook){
-        addressBookService.updateById(addressBook);
-        return R.success("update success");
+    public R<String> update(HttpServletRequest request, @RequestBody AddressBook addressBook){
+        // Update audit fields
+        addressBook.setUpdateTime(LocalDateTime.now());
+        addressBook.setUpdateUser((Long) request.getSession().getAttribute("user"));
+
+        addressBookService.update(addressBook);
+        return R.success("Update success");
     }
 
+    /**
+     * Delete address
+     */
     @DeleteMapping
-    public R<String> delete(Long ids){
-        addressBookService.removeById(ids);
-        return R.success("delete success");
+    public R<String> delete(@RequestParam Long ids){
+        addressBookService.delete(ids);
+        return R.success("Delete success");
     }
 
+    /**
+     * Set default address
+     */
     @PutMapping("/default")
-    public R<AddressBook> setDefault(@RequestBody AddressBook addressBook){
-        LambdaUpdateWrapper<AddressBook> wrapper = new LambdaUpdateWrapper<>();
-        wrapper.eq(AddressBook::getUserId,BaseContext.getCurrentId());
-        wrapper.set(AddressBook::getIsDefault,0);
-        addressBookService.update(wrapper);
+    public R<AddressBook> setDefault(HttpServletRequest request, @RequestBody AddressBook addressBook){
+        // Ensure User ID is set
+        addressBook.setUserId((Long) request.getSession().getAttribute("user"));
 
-        addressBook.setIsDefault(1);
-        addressBookService.updateById(addressBook);
+        addressBookService.setDefault(addressBook);
         return R.success(addressBook);
     }
 
+    /**
+     * Get the default address
+     */
     @GetMapping("/default")
-    public R<AddressBook> getDefault(){
-        LambdaQueryWrapper<AddressBook> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(AddressBook::getUserId,BaseContext.getCurrentId()).eq(AddressBook::getIsDefault,1);
-        AddressBook address = addressBookService.getOne(lqw);
-        return R.success(address);
+    public R<AddressBook> getDefault(HttpServletRequest request){
+        Long userId = (Long) request.getSession().getAttribute("user");
+        AddressBook addressBook = addressBookService.getDefault(userId);
+
+        if (addressBook != null) {
+            return R.success(addressBook);
+        }
+        return R.error("Default address not found");
     }
-
-
 }

@@ -10,15 +10,15 @@ import java.sql.SQLIntegrityConstraintViolationException;
 @Slf4j
 @ResponseBody
 public class GlobalExceptionHandler {
-    @ExceptionHandler(SQLIntegrityConstraintViolationException.class)
-    public R<String> exceptionHandler(SQLIntegrityConstraintViolationException ex){
-        log.error(ex.getMessage());
-        if(ex.getMessage().contains("Duplicate entry")){
-            String[] split = ex.getMessage().split(" ");
-            String msg = split[2]+"exists";
-            return R.error(msg);
+    @ExceptionHandler(Exception.class)
+    public R<String> handleGeneralException(Exception ex) {
+        log.error("System error: ", ex);
+
+        if (ex.getMessage() != null && ex.getMessage().contains("already exists")) {
+            return R.error("Data conflict: The information already exists.");
         }
-        return R.error("unknown failed");
+
+        return R.error("An unexpected error occurred. Please try again.");
     }
 
     @ExceptionHandler(CustomException.class)

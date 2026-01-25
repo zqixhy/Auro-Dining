@@ -1,34 +1,38 @@
 package com.qiao.entity;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
-
+import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+/**
+ * Dish Flavor Entity
+ */
 @Data
+@Entity
+@Table(name = "dish_flavor")
 public class DishFlavor implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Dish ID (Foreign Key logic)
     private Long dishId;
 
+    // Flavor Name (e.g., "Spiciness")
     private String name;
 
+    // Flavor Value (e.g., "Medium Spicy")
     private String value;
 
-    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
-    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
-    @TableField(fill = FieldFill.INSERT)
     private Long createUser;
 
-    @TableField(fill = FieldFill.INSERT_UPDATE)
     private Long updateUser;
 
     private Integer isDeleted;

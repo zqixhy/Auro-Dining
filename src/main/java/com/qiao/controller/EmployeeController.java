@@ -1,116 +1,119 @@
 package com.qiao.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.StringUtils;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qiao.common.R;
 import com.qiao.entity.Employee;
 import com.qiao.service.EmployeeService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @Slf4j
 @RequestMapping("/employee")
 public class EmployeeController {
+
     @Autowired
     private EmployeeService employeeService;
 
     @PostMapping("/login")
-    public R<Employee> login(HttpServletRequest request, @RequestBody Employee employee){
+    public R<Employee> login(HttpServletRequest request, @RequestBody Employee employee) {
+        // Encrypt password using MD5
         String password = employee.getPassword();
         password = DigestUtils.md5DigestAsHex(password.getBytes());
 
-        LambdaQueryWrapper<Employee> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(Employee::getUsername,employee.getUsername());
-        Employee emp = employeeService.getOne(lqw);
+        Employee emp = employeeService.getByUsername(employee.getUsername());
 
-        if(emp == null){
+        if (emp == null) {
             return R.error("username doesn't exist");
         }
 
-        if(!emp.getPassword().equals(password)){
+        if (!emp.getPassword().equals(password)) {
             return R.error("password is wrong");
         }
-        if(emp.getStatus() == 0){
+
+        if (emp.getStatus() == 0) {
             return R.error("the account is abandoned");
         }
 
-        request.getSession().setAttribute("employee",emp.getId());
+        // Set session attribute
+        request.getSession().setAttribute("employee", emp.getId());
         return R.success(emp);
     }
 
+
     @PostMapping("/logout")
-    public R<String> logout(HttpServletRequest request){
+    public R<String> logout(HttpServletRequest request) {
         request.getSession().removeAttribute("employee");
         return R.success("sign out success");
     }
 
+    /**
+     * Add New Employee
+     */
     @PostMapping
-    public R<String> save(@RequestBody Employee employee){
-        log.info("新增员工：{}",employee.toString());
+    public R<String> save(HttpServletRequest request, @RequestBody Employee employee) {
+        log.info("add employee: {}", employee.toString());
+
+        // Default password
         employee.setPassword(DigestUtils.md5DigestAsHex("123456".getBytes()));
 
-/*        employee.setCreateTime(LocalDateTime.now());
+        employee.setCreateTime(LocalDateTime.now());
         employee.setUpdateTime(LocalDateTime.now());
 
-        employee.setCreateUser((Long) request.getSession().getAttribute("employee"));
-        employee.setUpdateUser((Long) request.getSession().getAttribute("employee"));*/
+        Long currentEmpId = (Long) request.getSession().getAttribute("employee");
+        employee.setCreateUser(currentEmpId);
+        employee.setUpdateUser(currentEmpId);
 
         employeeService.save(employee);
-
         return R.success("add success");
     }
 
+    /**
+     * Pagination Query
+     */
     @GetMapping("/page")
-    public R<Page> selectPage(int page, int pageSize,String name){
-        log.info("page={},pageSize={},name={}",page,pageSize,name);
+    public R<Map<String, Object>> selectPage(int page, int pageSize, String name) {
+        Page<Employee> pageInfo = employeeService.page(page, pageSize, name);
 
-        Page pageinfo = new Page(page, pageSize);
+        Map<String, Object> pageData = new HashMap<>();
+        pageData.put("records", pageInfo.getContent());
+        pageData.put("total", pageInfo.getTotalElements());
 
-        LambdaQueryWrapper<Employee> lqw = new LambdaQueryWrapper<>();
-
-        lqw.like(StringUtils.isNotEmpty(name),Employee::getName,name);
-
-        lqw.orderByDesc(Employee::getUpdateTime);
-
-        employeeService.page(pageinfo,lqw);
-        return R.success(pageinfo);
+        return R.success(pageData);
     }
 
+    /**
+     * Update Employee Info
+     */
     @PutMapping
-    public R<String> update(@RequestBody Employee employee){
-        log.info(employee.toString());
-/*        Long empId = (Long) request.getSession().getAttribute("employee");
-        employee.setUpdateTime(LocalDateTime.now());
-        employee.setUpdateUser(empId);*/
-        employeeService.updateById(employee);
+    public R<String> update(HttpServletRequest request, @RequestBody Employee employee) {
+        log.info("update employee: {}", employee.toString());
 
+        employee.setUpdateTime(LocalDateTime.now());
+        Long currentEmpId = (Long) request.getSession().getAttribute("employee");
+        employee.setUpdateUser(currentEmpId);
+
+        employeeService.save(employee);
         return R.success("update success");
     }
 
+    /**
+     * Get Employee by ID
+     */
     @GetMapping("/{id}")
-    public R<Employee> getById(@PathVariable Long id){
+    public R<Employee> getById(@PathVariable Long id) {
         log.info("get employee info by id...");
         Employee employee = employeeService.getById(id);
-        if(employee != null){
+        if (employee != null) {
             return R.success(employee);
         }
         return R.error("no employee info");
     }
-
-
-
-
-
-
-
-
-
 }

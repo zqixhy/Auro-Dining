@@ -1,6 +1,5 @@
 package com.qiao.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.qiao.common.R;
 import com.qiao.entity.User;
 import com.qiao.service.UserService;
@@ -28,51 +27,72 @@ public class UserController {
     @Autowired
     private RedisTemplate redisTemplate;
 
+    /**
+     * Send verification code via phone
+     */
     @PostMapping("/sendMsg")
     public R<String> sendMsg(@RequestBody User user){
         String phone = user.getPhone();
-        if(null != phone){
+        if(phone != null){
+            // Generate 4-digit code
             String code = ValidateCodeUtils.generateValidateCode(4).toString();
-            log.info("code={}",code);
+            log.info("Verification code for {}: {}", phone, code);
 
-            //request.getSession().setAttribute(phone,code);
+            // Store code in Redis for 5 minutes
+            redisTemplate.opsForValue().set(phone, code, 5, TimeUnit.MINUTES);
 
-            redisTemplate.opsForValue().set(phone,code,5, TimeUnit.MINUTES);
-
-            return R.success("send success");
+            return R.success("Send success");
         }
-
-        return R.error("send failed");
+        return R.error("Send failed");
     }
 
+    /**
+     * Mobile User Login
+     */
     @PostMapping("/login")
-    public R<User> login(HttpServletRequest request,@RequestBody Map map){
+    public R<User> login(HttpServletRequest request, @RequestBody Map map){
         String phone = map.get("phone").toString();
         String code = map.get("code").toString();
 
-        log.info("phone:{},code:{}",phone,code);
+        log.info("Attempting login: phone={}, code={}", phone, code);
 
-        //String c = (String)request.getSession().getAttribute(phone);
-        Object c = redisTemplate.opsForValue().get(phone);
-        if(c.equals(code)){
-            LambdaQueryWrapper<User> lqw = new LambdaQueryWrapper<>();
-            lqw.eq(User::getPhone,phone);
-            User user = userService.getOne(lqw);
+        // 1. Verify code from Redis
+        Object cachedCode = redisTemplate.opsForValue().get(phone);
+        if(cachedCode != null && cachedCode.equals(code)){
+
+            // 2. Check if user exists in database
+            User user = userService.getByPhone(phone);
+
+            // 3. Auto-register if user is new
             if(user == null){
                 user = new User();
                 user.setPhone(phone);
+                user.setStatus(1); // Default status: enabled
                 userService.save(user);
             }
 
-            request.getSession().setAttribute("user",user.getId());
+            // 4. Store user ID in session
+            request.getSession().setAttribute("user", user.getId());
 
+            // 5. Clear Redis code after successful login
             redisTemplate.delete(phone);
 
             return R.success(user);
         }
 
-        return R.error("login failed");
-
+        return R.error("Login failed: Invalid code");
     }
 
+    /**
+     * Mobile User Logout
+     */
+    @PostMapping("/loginout")
+    public R<String> loginout(HttpServletRequest request) {
+        // 1. Remove user ID from session
+        request.getSession().removeAttribute("user");
+        // 2. Clear current thread local user context
+        com.qiao.common.BaseContext.removeCurrentId();
+        log.info("User logged out successfully");
+        return R.success("Logout successful");
+    }
 }

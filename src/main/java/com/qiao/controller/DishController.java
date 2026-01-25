@@ -1,7 +1,5 @@
 package com.qiao.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qiao.common.R;
 import com.qiao.dto.DishDto;
 import com.qiao.entity.Category;
@@ -10,24 +8,25 @@ import com.qiao.entity.DishFlavor;
 import com.qiao.service.CategoryService;
 import com.qiao.service.DishFlavorService;
 import com.qiao.service.DishService;
-import com.qiao.service.impl.DishServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
 @RequestMapping("/dish")
 public class DishController {
+
     @Autowired
     private DishService dishService;
 
@@ -40,138 +39,149 @@ public class DishController {
     @Autowired
     private RedisTemplate redisTemplate;
 
-    @Autowired
-    private CacheManager cacheManager;
-
+    /**
+     * Pagination for Dishes
+     */
     @GetMapping("/page")
-    public R<Page> getPage(int page, int pageSize,String name){
-        Page<Dish> dishPage = new Page<>(page, pageSize);
-        Page<DishDto> dishDtoPage = new Page<>();
+    public R<Map<String, Object>> getPage(int page, int pageSize, String name) {
 
-        LambdaQueryWrapper<Dish> lqw = new LambdaQueryWrapper<>();
-        lqw.like(name != null,Dish::getName,name);
-        lqw.orderByDesc(Dish::getUpdateTime);
-        dishService.page(dishPage,lqw);
+        Page<Dish> pageInfo = dishService.page(page, pageSize, name);
 
-        BeanUtils.copyProperties(dishPage,dishDtoPage,"records");
-
-        List<Dish> records = dishPage.getRecords();
-
-        List<DishDto> dishDtos = new ArrayList<>();
-        records.forEach(dish ->
-        {
+        List<DishDto> dishDtoList = pageInfo.getContent().stream().map(dish -> {
             DishDto dishDto = new DishDto();
+            BeanUtils.copyProperties(dish, dishDto);
 
-            BeanUtils.copyProperties(dish,dishDto);
-
-            Category category = categoryService.getById(dish.getCategoryId());
-
-            if(category != null){
-                dishDto.setCategoryName(category.getName());
+            Long categoryId = dish.getCategoryId();
+            if (categoryId != null) {
+                Category category = categoryService.getById(categoryId);
+                if (category != null) {
+                    dishDto.setCategoryName(category.getName());
+                }
             }
+            return dishDto;
+        }).collect(Collectors.toList());
 
-            dishDtos.add(dishDto);
-        });
+        Map<String, Object> pageData = new HashMap<>();
+        pageData.put("records", dishDtoList);
+        pageData.put("total", pageInfo.getTotalElements());
 
-        dishDtoPage.setRecords(dishDtos);
-
-        return R.success(dishDtoPage);
+        return R.success(pageData);
     }
 
+    /**
+     * Save Dish
+     */
     @PostMapping
     public R<String> save(@RequestBody DishDto dishDto){
-        log.info("新增菜品：{}",dishDto.toString());
+        log.info("Add dish: {}", dishDto.toString());
+
+        dishDto.setCreateTime(LocalDateTime.now());
+        dishDto.setUpdateTime(LocalDateTime.now());
+        // Note: You should set CreateUser/UpdateUser here from Session like in previous modules
+
         dishService.saveWithFlavor(dishDto);
 
-        redisTemplate.delete("dish_" + dishDto.getCategoryId() + "_1");
+        String key = "dish_" + dishDto.getCategoryId() + "_1";
+        redisTemplate.delete(key);
 
         return R.success("add success");
     }
 
+    /**
+     * Update Dish
+     */
     @PutMapping
     public R<String> update(@RequestBody DishDto dishDto){
         log.info(dishDto.toString());
+
+        dishDto.setUpdateTime(LocalDateTime.now());
+
         dishService.updateWithFlavor(dishDto);
 
-        redisTemplate.delete("dish_" + dishDto.getCategoryId() +"_1");
+        redisTemplate.delete("dish_" + dishDto.getCategoryId() + "_1");
 
         return R.success("update success");
     }
 
+    /**
+     * Get Dish by ID (for Edit)
+     */
     @GetMapping("/{id}")
     public R<DishDto> getByIdWithDish(@PathVariable Long id){
-        log.info("get dishDto by id {}",id);
-
         DishDto dishDto = dishService.getByIdWithFlavor(id);
         if(dishDto != null){
             return R.success(dishDto);
         }
-        return R.error("failed to get dishDto info");
+        return R.error("failed to get dish info");
     }
 
+    /**
+     * Change Status (Bulk)
+     */
     @PostMapping("/status/{status}")
-    public R<String> changeDishStatus(Long[] ids, @PathVariable Integer status){
-
+    public R<String> changeDishStatus(@RequestParam List<Long> ids, @PathVariable Integer status){
         for (Long id : ids) {
-                Dish dish = dishService.getById(id);
+            Dish dish = dishService.getById(id);
+            if (dish != null) {
                 dish.setStatus(status);
-                dishService.updateById(dish);
-        }
+                dish.setUpdateTime(LocalDateTime.now());
+                dishService.update(dish);
 
+                // Clear cache for this category
+                redisTemplate.delete("dish_" + dish.getCategoryId() + "_1");
+            }
+        }
         return R.success("change status success");
     }
 
+    /**
+     * Delete Dishes
+     */
     @DeleteMapping
-    public R<String> delete(Long[] ids) {
-        log.info("delete: {}", ids);
-
+    public R<String> delete(@RequestParam List<Long> ids) {
         for (Long id : ids) {
-            dishService.deleteByIdWithFlavor(id);
+            Dish dish = dishService.getById(id);
+            if(dish != null) {
+                redisTemplate.delete("dish_" + dish.getCategoryId() + "_1");
+                dishService.deleteByIdWithFlavor(id);
+            }
         }
-
         return R.success("delete success");
-
     }
 
+    /**
+     * List Dishes (Used by Mobile/User side)
+     */
     @GetMapping("/list")
     public R<List<DishDto>> getDishList(Dish dish){
-        Long categoryId = dish.getCategoryId();
-        List<DishDto> dishDtos = new ArrayList<>();
+        List<DishDto> dishDtos = null;
 
-        String key = "dish_" +categoryId +"_" +dish.getStatus();
+        // Construct Redis Key
+        String key = "dish_" + dish.getCategoryId() + "_" + dish.getStatus();
 
-        List<DishDto> dishDtoList = (List<DishDto>) redisTemplate.opsForValue().get(key);
-
-        if(dishDtoList != null){
-            return R.success(dishDtoList);
+        // Check Redis
+        dishDtos = (List<DishDto>) redisTemplate.opsForValue().get(key);
+        if(dishDtos != null){
+            return R.success(dishDtos);
         }
 
-        LambdaQueryWrapper<Dish> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(Dish::getCategoryId,categoryId).eq(Dish::getStatus,1);
-        lqw.orderByAsc(Dish::getSort).orderByDesc(Dish::getUpdateTime);
+        // Query Database if Cache Miss
+        List<Dish> list = dishService.list(dish.getCategoryId(), dish.getStatus());
 
-        List<Dish> dishes = dishService.list(lqw);
-
-        dishes.forEach(item -> {
+        dishDtos = list.stream().map(item -> {
             DishDto dishDto = new DishDto();
-            BeanUtils.copyProperties(item,dishDto);
+            BeanUtils.copyProperties(item, dishDto);
 
-            dishDto.setCategoryName(categoryService.getById(categoryId).getName());
+            // Set Flavors
+            List<DishFlavor> flavors = dishFlavorService.findByDishId(item.getId());
+            dishDto.setFlavors(flavors);
 
-            LambdaQueryWrapper<DishFlavor> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(DishFlavor::getDishId,item.getId()).eq(DishFlavor::getIsDeleted,0);
-            List<DishFlavor> dishFlavors = dishFlavorService.list(wrapper);
+            return dishDto;
+        }).collect(Collectors.toList());
 
-            dishDto.setFlavors(dishFlavors);
-
-            dishDtos.add(dishDto);
-        });
-
-        redisTemplate.opsForValue().set(key,dishDtos,60, TimeUnit.MINUTES);
+        // Save to Redis
+        redisTemplate.opsForValue().set(key, dishDtos, 60, TimeUnit.MINUTES);
 
         return R.success(dishDtos);
-
     }
-
-
 }

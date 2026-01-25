@@ -8,7 +8,7 @@ import java.util.Map;
 
 @Data
 public class R<T> implements Serializable {
-    private Integer code;
+    private Integer code;    // 1: success, other: fail
     private Object data;
     private String msg;
     private Map map = new HashMap();

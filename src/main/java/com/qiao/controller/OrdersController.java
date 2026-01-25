@@ -1,32 +1,30 @@
 package com.qiao.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qiao.common.BaseContext;
 import com.qiao.common.R;
 import com.qiao.dto.OrdersDto;
-import com.qiao.entity.AddressBook;
 import com.qiao.entity.OrderDetail;
 import com.qiao.entity.Orders;
-import com.qiao.entity.ShoppingCart;
-import com.qiao.service.AddressBookService;
-import com.qiao.service.OrderDetailService;
+import com.qiao.repository.OrderDetailRepository;
+import com.qiao.repository.OrdersRepository;
 import com.qiao.service.OrdersService;
-import com.qiao.service.UserService;
 import lombok.extern.slf4j.Slf4j;
-import net.sf.jsqlparser.expression.DateTimeLiteralExpression;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.web.bind.annotation.*;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import javax.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
@@ -37,49 +35,68 @@ public class OrdersController {
     private OrdersService orderService;
 
     @Autowired
-    private UserService userService;
+    private OrdersRepository ordersRepository;
 
+    /**
+     * User order history
+     */
     @Autowired
-    private AddressBookService addressBookService;
-
+    private OrderDetailRepository orderDetailRepository;
 
     @GetMapping("/userPage")
-    public R<Page> getUserPage(int page, int pageSize){
-        Page<Orders> ordersPage = new Page(page,pageSize);
+    public R<Map<String, Object>> getUserPage(int page, int pageSize){
+        PageRequest pageRequest = PageRequest.of(page - 1, pageSize, Sort.by("orderTime").descending());
 
-        LambdaQueryWrapper<Orders> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(Orders::getUserId, BaseContext.getCurrentId());
-        lqw.orderByDesc(Orders::getCheckoutTime);
-        orderService.page(ordersPage,lqw);
+        Page<Orders> ordersPage = ordersRepository.findByUserId(BaseContext.getCurrentId(), pageRequest);
 
-        return R.success(ordersPage);
+        List<OrdersDto> dtoList = ordersPage.getContent().stream().map(order -> {
+            OrdersDto dto = new OrdersDto();
+            BeanUtils.copyProperties(order, dto);
 
+            List<OrderDetail> details = orderDetailRepository.findByOrderId(order.getId());
+            dto.setOrderDetails(details);
+
+            return dto;
+        }).collect(Collectors.toList());
+
+        Map<String, Object> pageData = new HashMap<>();
+        pageData.put("records", dtoList);
+        pageData.put("total", ordersPage.getTotalElements());
+
+        return R.success(pageData);
     }
 
+    /**
+     * Admin order management with dynamic filters
+     */
     @GetMapping("/page")
-    public R<Page> getPage(int page, int pageSize, String number, String beginTime,String endTime) throws ParseException {
+    public R<Map<String, Object>> getPage(int page, int pageSize, String number, String beginTime, String endTime) {
 
-        Page<Orders> ordersPage = new Page(page,pageSize);
-        LambdaQueryWrapper<Orders> lqw = new LambdaQueryWrapper<>();
+        PageRequest pageRequest = PageRequest.of(page - 1, pageSize, Sort.by("orderTime").descending());
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        if (number != null){
-            lqw.eq(Orders::getNumber,number);
-        }
-        if(beginTime != null){
-            LocalDateTime begin = LocalDateTime.parse(beginTime, formatter);
-            lqw.ge(Orders::getCheckoutTime,begin);
-        }
-        if(endTime != null){
-            LocalDateTime end = LocalDateTime.parse(endTime, formatter);
-            lqw.le(Orders::getCheckoutTime,end);
-        }
 
-        lqw.orderByDesc(Orders::getCheckoutTime);
-        orderService.page(ordersPage,lqw);
+        Specification<Orders> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (number != null && !number.isEmpty()) {
+                predicates.add(cb.equal(root.get("number"), number));
+            }
+            if (beginTime != null && !beginTime.isEmpty()) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("checkoutTime"), LocalDateTime.parse(beginTime, formatter)));
+            }
+            if (endTime != null && !endTime.isEmpty()) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("checkoutTime"), LocalDateTime.parse(endTime, formatter)));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
 
-        return R.success(ordersPage);
+        Page<Orders> ordersPage = ordersRepository.findAll(spec, pageRequest);
+
+        Map<String, Object> pageData = new HashMap<>();
+        pageData.put("records", ordersPage.getContent());
+        pageData.put("total", ordersPage.getTotalElements());
+
+        return R.success(pageData);
     }
-
 
     @PostMapping("/submit")
     public R<String> submit(@RequestBody Orders orders){
@@ -90,17 +107,16 @@ public class OrdersController {
     @PostMapping("/again")
     public R<String> again(@RequestBody Orders orders){
         orderService.again(orders);
-
         return R.success("success");
     }
 
     @PutMapping
     public R<String> editStatus(@RequestBody Orders orders){
-        LambdaUpdateWrapper<Orders> luw = new LambdaUpdateWrapper<>();
-        luw.eq(Orders::getId,orders.getId());
-        luw.set(Orders::getStatus,orders.getStatus());
-        orderService.update(luw);
+        Orders existingOrder = ordersRepository.findById(orders.getId()).orElse(null);
+        if(existingOrder != null) {
+            existingOrder.setStatus(orders.getStatus());
+            ordersRepository.save(existingOrder);
+        }
         return R.success("edit status success");
     }
-
 }

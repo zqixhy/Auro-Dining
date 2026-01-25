@@ -10,25 +10,31 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.UUID;
 
+/**
+ * Common Controller for File Upload and Download
+ */
 @RestController
 @RequestMapping("/common")
 @Slf4j
 public class CommonController {
+
     @Value("${reggie.path}")
     private String basePath;
 
-
+    /**
+     * File Upload
+     * @param file MultipartFile from frontend
+     * @return R<String> containing the generated filename
+     */
     @PostMapping("/upload")
     public R<String> upload(MultipartFile file) throws IOException {
-        log.info(file.toString());
+        log.info("Uploading file to Pictures folder...");
 
         String originalFilename = file.getOriginalFilename();
         String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
-
         String fileName = UUID.randomUUID().toString() + suffix;
 
         File dir = new File(basePath);
@@ -36,25 +42,29 @@ public class CommonController {
             dir.mkdirs();
         }
 
-        file.transferTo(new File(basePath + fileName));
+        file.transferTo(new File(dir, fileName));
 
         return R.success(fileName);
     }
 
     @GetMapping("/download")
     public void download(String name, HttpServletResponse response) throws IOException {
-        FileInputStream fileInputStream = new FileInputStream(new File(basePath + name));
-        ServletOutputStream outputStream = response.getOutputStream();
-        response.setContentType("/image/jpeg");
+        try (
+                // Use try-with-resources for automatic stream closing
+                FileInputStream fileInputStream = new FileInputStream(new File(basePath + name));
+                ServletOutputStream outputStream = response.getOutputStream()
+        ) {
+            // Set response type as image
+            response.setContentType("image/jpeg");
 
-        int len = 0;
-        byte[] bytes = new byte[1024];
-        while ((len = fileInputStream.read(bytes)) != -1){
-            outputStream.write(bytes,0,len);
-            outputStream.flush();
+            int len = 0;
+            byte[] bytes = new byte[1024];
+            while ((len = fileInputStream.read(bytes)) != -1){
+                outputStream.write(bytes, 0, len);
+                outputStream.flush();
+            }
+        } catch (Exception e) {
+            log.error("File download error: {}", e.getMessage());
         }
-
-        outputStream.close();
-        fileInputStream.close();
     }
 }

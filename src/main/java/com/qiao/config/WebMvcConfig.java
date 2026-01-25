@@ -18,9 +18,7 @@ import java.util.List;
 @Slf4j
 @Configuration
 public class WebMvcConfig extends WebMvcConfigurationSupport {
-/*    @Autowired
-    ProjectInterceptor projectInterceptor;*/
-
+    // Configure static resource mapping
     @Override
     protected void addResourceHandlers(ResourceHandlerRegistry registry) {
         log.info("start static resources mapper...");
@@ -32,19 +30,7 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
     protected void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
         MappingJackson2HttpMessageConverter messageConverter = new MappingJackson2HttpMessageConverter();
         messageConverter.setObjectMapper(new JacksonObjectMapper());
-        converters.add(0,messageConverter);
+        converters.add(0, messageConverter);
     }
 
-    /*@Override
-    protected void addInterceptors(InterceptorRegistry registry) {
-        log.info("start interceptor...");
-        registry.addInterceptor(projectInterceptor).
-                addPathPatterns("/**").
-                excludePathPatterns(
-                        "/employee/login",
-                        "/employee/logout",
-                        "/backend/**",
-                        "/front/**"
-                );
-    }*/
 }
