@@ -29,18 +29,18 @@
             <div class="divLinks">
                 <div class="item" @click="toAddressPage">
                     <img src="./../images/locations.png"/>
-                    <span>address management</span>
+                    <span>Address Management</span>
                     <i class="el-icon-arrow-right"></i>
                 </div>
                 <div class="divSplit"></div>
                 <div class="item" @click="toOrderPage">
                     <img src="./../images/orders.png"/>
-                    <span>order history</span>
+                    <span>Order History</span>
                     <i class="el-icon-arrow-right"></i>
                 </div>
             </div>
             <div class="divOrders" v-if="order[0]">
-                <div class="title">recent order</div>
+                <div class="title">Recent Order</div>
                 <div class="timeStatus">
                     <span>{{order[0].orderTime}}</span>
                     <span>{{getStatus(order[0].status)}}</span>

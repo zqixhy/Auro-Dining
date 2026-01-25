@@ -21,19 +21,19 @@
             </div>
             <div class="divContent">
                 <div class="divItem">
-                   <span>contact name：</span>
-                   <el-input placeholder=" contact name" v-model="form.consignee"  maxlength='10' class="inputUser"/></el-input>
+                   <span>Contact Name</span>
+                   <el-input placeholder="Contact Name" v-model="form.consignee"  maxlength='10' class="inputUser"/></el-input>
                 </div>
                 <div class="divItem">
-                    <span>phone number：</span>
-                    <el-input placeholder=" please enter phone numer" v-model="form.phone"  maxlength='20' class="inputUser"/></el-input>
+                    <span>Phone Number</span>
+                    <el-input placeholder="Phone Number" v-model="form.phone"  maxlength='20' class="inputUser"/></el-input>
                 </div>
                 <div class="divItem">
-                    <span>address：</span>
-                    <el-input placeholder=" please enter address" v-model="form.detail"  maxlength='140'/></el-input>
+                    <span>Address</span>
+                    <el-input placeholder="Address" v-model="form.detail"  maxlength='140'/></el-input>
                 </div>
                 <div class="divItem divItemNote">
-                    <span>note：</span>
+                    <span>Label</span>
                     <div class="noteTags">
                         <span v-for="(item,index) in labelList" :key="index" @click="form.label = item;activeIndex = index" :class="{spanItem:true,spanActiveCompany:activeIndex === index && item === 'company',spanActiveHome:activeIndex === index && item === 'home',spanActiveSchool:activeIndex === index && (item === 'school' || item === 'none')}">{{item}}</span>
                     </div>
@@ -99,20 +99,20 @@
                     async saveAddress(){
                         const form = this.form
                         if(!form.consignee){
-                            this.$notify({ type:'warning', message:'please enter name'});
+                            this.$notify({ type:'warning', message:'Please enter contact name'});
                             return 
                         }
                         if(!form.phone){
-                            this.$notify({ type:'warning', message:'please enter phone number'});
+                            this.$notify({ type:'warning', message:'Please enter phone number'});
                             return 
                         }
                         if(!form.detail){
-                            this.$notify({ type:'warning', message:'please enter address'});
+                            this.$notify({ type:'warning', message:'Please enter address'});
                             return 
                         }
                         const reg = /^1[3|4|5|7|8][0-9]{9}$/
                         if(!reg.test(form.phone)){
-                            this.$notify({ type:'warning', message:'invalid phone number'});
+                            this.$notify({ type:'warning', message:'Invalid phone number'});
                             return  
                         }
                         let res= {}

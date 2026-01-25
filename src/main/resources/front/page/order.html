@@ -23,7 +23,7 @@
                 <van-list
                     v-model="loading"
                     :finished="finished"
-                    finished-text="no more"
+                    finished-text="No More Orders"
                     @load="getList"
                     >
                     <van-cell v-for="(order,index) in orderList" :key="index" class="item">
@@ -56,7 +56,7 @@
             <div class="divNoData" v-else>
                 <div class="divContainer">
                     <img src="./../images/no_order.png"/>
-                    <div>no order</div>
+                    <div>No Orders</div>
                 </div>
             </div>
         </div>

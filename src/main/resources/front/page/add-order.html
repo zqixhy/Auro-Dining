@@ -35,10 +35,10 @@
                         </div>
                         <i class="el-icon-arrow-right"></i>
                     </div>
-                    <div class="divFinishTime">Estimate: {{finishTime}}</div>
+                    <div class="divFinishTime">Estimated Delivery: {{finishTime}}</div>
                 </div>
                 <div class="order">
-                    <div class="title">order detail</div>
+                    <div class="title">Order Details</div>
                     <div class="divSplit"></div>
                     <div class="itemList">
                         <div class="item" v-for="(item,index) in cartData" :key="index">
@@ -59,14 +59,14 @@
                     </div>
                 </div>
                 <div class="note">
-                    <div class="title">note</div>
+                    <div class="title">Special Instructions</div>
                     <van-field
                         v-model="note"
                         rows="2"
                         autosize
                         type="textarea"
                         maxlength="50"
-                        placeholder="please enter note"
+                        placeholder="Special Instructions (Optional)"
                         show-word-limit
                     />
                 </div>

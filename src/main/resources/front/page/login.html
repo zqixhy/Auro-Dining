@@ -14,15 +14,22 @@
       </head>
     <body>
         <div id="login" v-loading="loading">
-            <div class="divHead">Aura Dining</div>
-            <div class="divContainer">
-                <el-input placeholder=" please enter phone number" v-model="form.phone"  maxlength='20'/></el-input>
-                <div class="divSplit"></div>
-                <el-input placeholder=" please enter code" v-model="form.code"  maxlength='20'/></el-input>
-                <span @click='getCode'>Get Code</span>
+            <div class="divHead">
+                <div class="logoSection">
+                    <img src="./../images/logo.png" alt="Aura Dining" class="logoImg" />
+                    <div class="restaurantName">Aura Dining</div>
+                </div>
             </div>
-            <div class="divMsg" v-if="msgFlag">invalid phone number</div>
-            <el-button type="primary" :class="{btnSubmit:1===1,btnNoPhone:!form.phone,btnPhone:form.phone}" @click="btnLogin">Login</el-button>
+            <div class="divContent">
+                <div class="divContainer">
+                    <el-input placeholder="Phone Number" v-model="form.phone"  maxlength='20'/></el-input>
+                    <div class="divSplit"></div>
+                    <el-input placeholder="Verification Code" v-model="form.code"  maxlength='20'/></el-input>
+                    <span @click='getCode'>Send Code</span>
+                </div>
+                <div class="divMsg" v-if="msgFlag">Invalid phone number</div>
+                <el-button type="primary" :class="{btnSubmit:1===1,btnNoPhone:!form.phone,btnPhone:form.phone}" @click="btnLogin">Sign In</el-button>
+            </div>
         </div>
         <script src="../../backend/plugins/vue/vue.js"></script>
         <script src="../../backend/plugins/element-ui/index.js"></script>
@@ -73,7 +80,7 @@
                             this.$notify({ type:'warning', message:res.msg});
                         }
                     }else{
-                        this.$notify({ type:'warning', message:'please enter phone number'});
+                        this.$notify({ type:'warning', message:'Please enter phone number'});
                     }
                 }
             }
