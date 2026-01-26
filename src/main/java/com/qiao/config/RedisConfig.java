@@ -7,23 +7,28 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.qiao.common.JacksonObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurerSupport;
+import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
 
+@Slf4j
 @Configuration
 public class RedisConfig extends CachingConfigurerSupport {
+
+
 
     @Bean
     public RedisTemplate<Object, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
@@ -77,6 +82,43 @@ public class RedisConfig extends CachingConfigurerSupport {
         return RedisCacheManager.builder(factory)
                 .cacheDefaults(config)
                 .build();
+    }
+
+    /**
+     * When Redis is down: cache get fails -> treat as cache miss -> method runs -> query DB.
+     * Cache put/evict/clear failures are logged only; business logic (e.g. DB save) still succeeds.
+     */
+    @Override
+    public CacheErrorHandler errorHandler() {
+        return new CacheErrorHandler() {
+            @Override
+            public void handleCacheGetError(RuntimeException exception, Cache cache, Object key) {
+                log.warn("Cache get failed (Redis may be down), falling back to DB. cache={}, key={}, error={}",
+                        cache.getName(), key, exception.getMessage());
+                // Do not rethrow: Spring treats as cache miss and executes the cached method (DB query).
+            }
+
+            @Override
+            public void handleCachePutError(RuntimeException exception, Cache cache, Object key, Object value) {
+                log.warn("Cache put failed (Redis may be down). cache={}, key={}, error={}",
+                        cache.getName(), key, exception.getMessage());
+                // Do not rethrow: DB update already done; only caching fails.
+            }
+
+            @Override
+            public void handleCacheEvictError(RuntimeException exception, Cache cache, Object key) {
+                log.warn("Cache evict failed (Redis may be down). cache={}, key={}, error={}",
+                        cache.getName(), key, exception.getMessage());
+                // Do not rethrow: evict is best-effort; stale cache is acceptable temporarily.
+            }
+
+            @Override
+            public void handleCacheClearError(RuntimeException exception, Cache cache) {
+                log.warn("Cache clear failed (Redis may be down). cache={}, error={}",
+                        cache.getName(), exception.getMessage());
+                // Do not rethrow: clear is best-effort.
+            }
+        };
     }
 }
 
