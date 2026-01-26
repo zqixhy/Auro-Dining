@@ -103,7 +103,7 @@ input[type="number"] {
   background: #fcfcfc;
 }
 .avatar-uploader .el-icon-plus:before {
-  content: "上传图片" !important;
+  content: "Upload Image" !important;
   font-size: 12px;
   color: #000;
 }
@@ -13361,7 +13361,7 @@ input[type="number"] {
   animation: el-drawer-fade-in 225ms cubic-bezier(0, 0, 0.2, 1) 0s reverse;
 }
 
-/* 弹框样式处理 */
+/* Dialog style handling */
 .el-dialog {
   min-width: 568px !important;
   border-radius: 8px !important;

@@ -86,7 +86,7 @@
                             const res = await addressFindOneApi(params.id)
                             if(res.code === 1){
                                 this.form = res.data
-                                // 设置 activeIndex 基于 label
+                                // Set activeIndex based on label
                                 const index = this.labelList.indexOf(this.form.label)
                                 if(index !== -1){
                                     this.activeIndex = index
