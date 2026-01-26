@@ -35,9 +35,11 @@ public class LoginCheckFilter implements Filter {
                 "/employee/logout",
                 "/backend/page/login/login.html",
                 "/backend/js/**",
+                "/backend/api/**",
                 "/backend/styles/**",
                 "/backend/images/**",
                 "/backend/plugins/**",
+                "/backend/favicon.ico",
                 "/front/page/login.html",
                 "/front/index.html",
                 "/front/js/**",
@@ -94,7 +96,14 @@ public class LoginCheckFilter implements Filter {
         boolean isAjax = "XMLHttpRequest".equals(xRequestedWith);
 
         if (uri.endsWith(".html") && !isAjax) {
-            response.sendRedirect("/front/page/login.html");
+            // Determine redirect URL based on request path
+            if (uri.startsWith("/backend")) {
+                // Backend management pages redirect to backend login page
+                response.sendRedirect("/backend/page/login/login.html");
+            } else {
+                // Frontend pages redirect to frontend login page
+                response.sendRedirect("/front/page/login.html");
+            }
         } else {
             response.setContentType("application/json;charset=utf-8");
             response.getWriter().write(JSON.toJSONString(R.error("NOTLOGIN")));

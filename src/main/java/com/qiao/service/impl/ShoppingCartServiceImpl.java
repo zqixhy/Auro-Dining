@@ -32,8 +32,8 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
             cartItem = shoppingCartRepository.findByUserIdAndDishIdAndDishFlavor(
                     userId, shoppingCart.getDishId(), shoppingCart.getDishFlavor());
         } else {
-            // Check for existing setmeal
-            cartItem = shoppingCartRepository.findByUserIdAndSetmealId(userId, shoppingCart.getSetmealId());
+            // Check for existing combo
+            cartItem = shoppingCartRepository.findByUserIdAndComboId(userId, shoppingCart.getComboId());
         }
 
         if (cartItem != null) {
@@ -60,7 +60,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
             cartItem = shoppingCartRepository.findByUserIdAndDishIdAndDishFlavor(
                     userId, shoppingCart.getDishId(), shoppingCart.getDishFlavor());
         } else {
-            cartItem = shoppingCartRepository.findByUserIdAndSetmealId(userId, shoppingCart.getSetmealId());
+            cartItem = shoppingCartRepository.findByUserIdAndComboId(userId, shoppingCart.getComboId());
         }
 
         if (cartItem != null) {

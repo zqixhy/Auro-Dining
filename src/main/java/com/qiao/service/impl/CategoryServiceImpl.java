@@ -4,7 +4,7 @@ import com.qiao.common.CustomException;
 import com.qiao.entity.Category;
 import com.qiao.repository.CategoryRepository;
 import com.qiao.repository.DishRepository;
-import com.qiao.repository.SetmealRepository;
+import com.qiao.repository.ComboRepository;
 import com.qiao.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -24,7 +24,7 @@ public class CategoryServiceImpl implements CategoryService {
     private DishRepository dishRepository;
 
     @Autowired
-    private SetmealRepository setmealRepository;
+    private ComboRepository comboRepository;
 
     @Override
     public Category save(Category category) {
@@ -42,10 +42,10 @@ public class CategoryServiceImpl implements CategoryService {
             throw new CustomException("Category is associated with dishes, cannot delete");
         }
 
-        // Check if associated with setmeals
-        int setmealCount = setmealRepository.countByCategoryId(id);
-        if (setmealCount > 0) {
-            throw new CustomException("Category is associated with setmeals, cannot delete");
+        // Check if associated with combos
+        int comboCount = comboRepository.countByCategoryId(id);
+        if (comboCount > 0) {
+            throw new CustomException("Category is associated with combos, cannot delete");
         }
 
         categoryRepository.deleteById(id);

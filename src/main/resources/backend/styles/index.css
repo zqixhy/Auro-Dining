@@ -20,11 +20,11 @@
   height: 100%;
   background: #f3f4f7;
   position: relative;
-  width: calc(100% - 190px);
+  width: calc(100% - 240px);
 }
 .sidebar-container {
   transition: width 0.28s;
-  width: 190px !important;
+  width: 240px !important;
   height: 100%;
   z-index: 1001;
   overflow: hidden;
@@ -217,8 +217,11 @@
 }
 .el-submenu > .el-submenu__title,
 .el-submenu .el-menu-item {
-  min-width: 190px !important;
+  min-width: 240px !important;
   background-color: #272a36 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 /* .el-submenu > .el-submenu__title:hover, .el-submenu .el-menu-item:hover {
   background-color: #0e132b !important;
@@ -232,11 +235,13 @@
   color: #aeb5c4;
   height: 42px;
   line-height: 42px;
-}
-.el-menu .el-menu-item {
-  padding: 0 0 0 32px !important;
-  margin: 0 34px 20px 0;
+  padding: 0 20px 0 32px !important;
+  margin: 0 0 20px 0;
   border-radius: 0 21px 21px 0 !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  display: flex !important;
+  align-items: center !important;
 }
 .el-menu .el-menu-item:hover {
   color: #ffffff !important;
@@ -264,10 +269,23 @@
   font-weight: 500 !important;
 }
 
+/* Ensure menu item text and icon are on the same line */
+.el-menu-item span,
+.el-submenu__title span {
+  display: inline-block !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  vertical-align: middle !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
 .el-menu-item i {
   color: inherit;
   font-size: 20px;
   margin-right: 5px;
+  vertical-align: middle !important;
+  display: inline-block !important;
 }
 
 .simple-mode.first-level .submenu-title-noDropdown {
@@ -299,16 +317,28 @@
   font-size: 16px !important;
   position: relative;
   z-index: 9;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  padding-right: 20px !important;
+  display: flex !important;
+  align-items: center !important;
 }
 .el-submenu__title svg {
   margin-right: 5px !important;
   width: 28px !important;
   height: 28px !important;
+  vertical-align: middle !important;
+  display: inline-block !important;
 }
 .el-menu-item {
   position: relative;
   font-size: 14px !important;
   padding-left: 52px !important;
+  padding-right: 20px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 .el-menu-item::before {
   /* position: absolute;

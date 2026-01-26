@@ -1,45 +1,45 @@
-const getSetmealPage = (params) => {
+const getComboPage = (params) => {
   return $axios({
-    url: '/setmeal/page',
+    url: '/combo/page',
     method: 'get',
     params
   })
 }
 
-const deleteSetmeal = (ids) => {
+const deleteCombo = (ids) => {
   return $axios({
-    url: '/setmeal',
+    url: '/combo',
     method: 'delete',
     params: { ids }
   })
 }
 
-const editSetmeal = (params) => {
+const editCombo = (params) => {
   return $axios({
-    url: '/setmeal',
+    url: '/combo',
     method: 'put',
     data: { ...params }
   })
 }
 
-const addSetmeal = (params) => {
+const addCombo = (params) => {
   return $axios({
-    url: '/setmeal',
+    url: '/combo',
     method: 'post',
     data: { ...params }
   })
 }
 
-const querySetmealById = (id) => {
+const queryComboById = (id) => {
   return $axios({
-    url: `/setmeal/${id}`,
+    url: `/combo/${id}`,
     method: 'get'
   })
 }
 
-const setmealStatusByStatus = (params) => {
+const comboStatusByStatus = (params) => {
   return $axios({
-    url: `/setmeal/status/${params.status}`,
+    url: `/combo/status/${params.status}`,
     method: 'post',
     params: { ids: params.ids }
   })

@@ -22,7 +22,7 @@
       <div class="tableBar">
         <el-input
           v-model="input"
-          placeholder="please enter employee"
+          placeholder="Search by name"
           style="width: 250px"
           clearable
            @keyup.enter.native="handleQuery"
@@ -48,23 +48,23 @@
       >
         <el-table-column
           prop="name"
-          label="name"
+          label="Name"
         ></el-table-column>
         <el-table-column
           prop="username"
-          label="account"
+          label="Username"
         ></el-table-column>
         <el-table-column
           prop="phone"
-          label="phone number"
+          label="Phone"
         ></el-table-column>
-        <el-table-column label="status">
+        <el-table-column label="Status">
           <template slot-scope="scope">
             {{ String(scope.row.status) === '0' ? 'not valid' : 'valid' }}
           </template>
         </el-table-column>
         <el-table-column
-          label="operation"
+          label="Actions"
           width="160"
           align="center"
         >

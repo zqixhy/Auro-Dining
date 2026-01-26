@@ -16,7 +16,7 @@
       <div class="tableBar">
         <el-input
           v-model="input"
-          placeholder="please enter dish name"
+          placeholder="Search by name"
           style="width: 250px"
           clearable
           @keyup.enter.native="handleQuery"
@@ -29,9 +29,9 @@
           ></i>
         </el-input>
         <div class="tableLab">
-          <span class="span-btn delBut non" @click="deleteHandle('batches', null)">batch deleting</span>
-          <span class="span-btn blueBug non" @click="statusHandle('1')">batch listing</span>
-          <span style="border:none;" class="span-btn delBut non" @click="statusHandle('0')">batch delisting</span>
+          <span class="span-btn delBut non" @click="deleteHandle('batches', null)">Delete Selected</span>
+          <span class="span-btn blueBug non" @click="statusHandle('1')">Enable Selected</span>
+          <span style="border:none;" class="span-btn delBut non" @click="statusHandle('0')">Disable Selected</span>
           <el-button
             type="primary"
             @click="addFoodtype('add')"
@@ -52,9 +52,9 @@
         ></el-table-column>
         <el-table-column
           prop="name"
-          label="dishName"
+          label="Name"
         ></el-table-column>
-        <el-table-column prop="image" label="img" align="center">
+        <el-table-column prop="image" label="Image" align="center">
           <template slot-scope="{ row }">
             <el-image style="width: auto; height: 40px; border:none;cursor: pointer;" 
             :src="getImage(row.image)" 
@@ -67,25 +67,25 @@
         </el-table-column>
         <el-table-column
           prop="categoryName"
-          label="dish category"
+          label="Category"
         ></el-table-column>
-        <el-table-column label="price">
+        <el-table-column label="Price">
           <template slot-scope="scope">
             <span style="margin-right: 10px;">${{ scope.row.price/100 }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="status">
+        <el-table-column label="Status">
           <template slot-scope="scope">
             <span style="margin-right: 10px;">{{ scope.row.status == '0' ? 'out of stock' : 'in stock' }}</span>
           </template>
         </el-table-column>
         <el-table-column
           prop="updateTime"
-          label="last operation time"
+          label="Last Updated"
         >
         </el-table-column>
         <el-table-column
-          label="operation"
+          label="Actions"
           width="160"
           align="center"
         >

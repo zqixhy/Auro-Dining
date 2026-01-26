@@ -16,7 +16,7 @@ public class Category implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Type: 1 Dish category, 2 Setmeal category
+    // Type: 1 Dish category, 2 Combo category
     private Integer type;
 
     private String name;

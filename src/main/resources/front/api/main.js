@@ -13,9 +13,9 @@ function dishListApi(data) {
     })
 }
 
-function setmealListApi(data) {
+function comboListApi(data) {
     return $axios({
-        'url': '/setmeal/list',
+        'url': '/combo/list',
         'method': 'get',
         params:{...data}
     })
@@ -52,9 +52,9 @@ function clearCartApi() {
     })
 }
 
-function setMealDishDetailsApi(id) {
+function comboDishDetailsApi(id) {
     return $axios({
-        'url': `/setmeal/dish/${id}`,
+        'url': `/combo/dish/${id}`,
         'method': 'get',
     })
 }

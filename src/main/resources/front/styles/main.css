@@ -776,30 +776,30 @@ First screen styles
   height: 44rem;
 }
 
-#main .setMealDetailsDialog {
+#main .comboDetailsDialog {
   display: flex;
   flex-direction: column;
   text-align: center;
 }
 
-#main .setMealDetailsDialog .divContainer {
+#main .comboDetailsDialog .divContainer {
   padding: 20rem 20rem 0 20rem;
   overflow: auto;
   max-height: 50vh;
   overflow-y: auto;
 }
 
-#main .setMealDetailsDialog .el-image {
+#main .comboDetailsDialog .el-image {
   width: 100%;
   height: 100%;
 }
 
-#main .setMealDetailsDialog .el-image img {
+#main .comboDetailsDialog .el-image img {
   width: 100%;
   height: 100%;
 }
 
-#main .setMealDetailsDialog .divSubTitle {
+#main .comboDetailsDialog .divSubTitle {
   text-align: left;
   margin-top: 16rem;
   margin-bottom: 6rem;
@@ -815,7 +815,7 @@ First screen styles
   position: relative;
 }
 
-#main .setMealDetailsDialog .divContainer .item .divSubTitle .divPrice {
+#main .comboDetailsDialog .divContainer .item .divSubTitle .divPrice {
   position: absolute;
   right: 0;
   top: 0;
@@ -829,7 +829,7 @@ First screen styles
 }
 
 #main
-  .setMealDetailsDialog
+  .comboDetailsDialog
   .divContainer
   .item
   .divSubTitle
@@ -838,7 +838,7 @@ First screen styles
   font-size: 12rem;
 }
 
-#main .setMealDetailsDialog .title {
+#main .comboDetailsDialog .title {
   height: 28rem;
   opacity: 1;
   font-size: 20rem;
@@ -851,7 +851,7 @@ First screen styles
   margin-bottom: 11rem;
 }
 
-#main .setMealDetailsDialog .content {
+#main .comboDetailsDialog .content {
   opacity: 1;
   font-size: 14rem;
   font-family: PingFangSC, PingFangSC-Regular;
@@ -861,7 +861,7 @@ First screen styles
   line-height: 24rem;
 }
 
-#main .setMealDetailsDialog .divNum {
+#main .comboDetailsDialog .divNum {
   display: flex;
   justify-content: space-between;
   margin-top: 23rem;
@@ -870,7 +870,7 @@ First screen styles
   padding-right: 20rem;
 }
 
-#main .setMealDetailsDialog .divNum .left {
+#main .comboDetailsDialog .divNum .left {
   font-size: 20rem;
   font-family: DIN, DIN-Medium;
   font-weight: 500;
@@ -880,15 +880,15 @@ First screen styles
   letter-spacing: 0rem;
 }
 
-#main .setMealDetailsDialog .divNum .left span:first-child {
+#main .comboDetailsDialog .divNum .left span:first-child {
   font-size: 12rem;
 }
 
-#main .setMealDetailsDialog .divNum .right {
+#main .comboDetailsDialog .divNum .right {
   display: flex;
 }
 
-#main .setMealDetailsDialog .divNum .divDishNum {
+#main .comboDetailsDialog .divNum .divDishNum {
   font-size: 15rem;
   font-family: PingFangSC, PingFangSC-Regular;
   font-weight: 500;
@@ -899,7 +899,7 @@ First screen styles
   width: auto;
 }
 
-#main .setMealDetailsDialog .divNum .divTypes {
+#main .comboDetailsDialog .divNum .divTypes {
   width: 64rem;
   height: 24rem;
   opacity: 1;
@@ -914,17 +914,17 @@ First screen styles
   letter-spacing: 0;
 }
 
-#main .setMealDetailsDialog .divNum .divSubtract,
+#main .comboDetailsDialog .divNum .divSubtract,
 .divAdd {
   height: 36rem;
 }
 
-#main .setMealDetailsDialog .divNum img {
+#main .comboDetailsDialog .divNum img {
   width: 36rem;
   height: 36rem;
 }
 
-#main .setMealDetailsDialog .divNum .right .addCart {
+#main .comboDetailsDialog .divNum .right .addCart {
   width: 100rem;
   height: 30rem;
   opacity: 1;
@@ -938,14 +938,14 @@ First screen styles
   line-height: 30rem;
 }
 
-#main .setMealDetailsDialog .detailsDialogClose {
+#main .comboDetailsDialog .detailsDialogClose {
   position: absolute;
   bottom: -70rem;
   left: 50%;
   transform: translate(-50%, 0);
 }
 
-#main .setMealDetailsDialog .detailsDialogClose img {
+#main .comboDetailsDialog .detailsDialogClose img {
   width: 44rem;
   height: 44rem;
 }

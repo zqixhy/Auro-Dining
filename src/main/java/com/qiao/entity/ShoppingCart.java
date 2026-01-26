@@ -25,7 +25,7 @@ public class ShoppingCart implements Serializable {
 
     private Long dishId;
 
-    private Long setmealId;
+    private Long comboId;
 
     private String dishFlavor;
 

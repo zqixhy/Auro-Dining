@@ -13,7 +13,7 @@ public interface ShoppingCartRepository extends JpaRepository<ShoppingCart, Long
 
     ShoppingCart findByUserIdAndDishIdAndDishFlavor(Long userId, Long dishId, String dishFlavor);
 
-    ShoppingCart findByUserIdAndSetmealId(Long userId, Long setmealId);
+    ShoppingCart findByUserIdAndComboId(Long userId, Long comboId);
 
     void deleteByUserId(Long userId);
 }

@@ -35,11 +35,11 @@
       >
         <el-table-column
           prop="name"
-          label="name"
+          label="Name"
         /></el-table-column>
         <el-table-column
           prop="type"
-          label="type"
+          label="Type"
         >
           <template slot-scope="scope">
             <span>{{ scope.row.type == '1' ? 'dish type': 'pack type' }}</span>
@@ -47,7 +47,7 @@
         </el-table-column>
         <el-table-column
           prop="updateTime"
-          label="updateTime"
+          label="Last Updated"
         >
         <template slot-scope="scope">
          {{scope.row.updateTime}}
@@ -55,10 +55,10 @@
         </el-table-column>
         <el-table-column
           prop="sort"
-          label="sort"
+          label="Sort"
         /></el-table-column>
         <el-table-column
-          label="update"
+          label="Actions"
           width="160"
           align="center"
         >

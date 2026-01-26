@@ -95,7 +95,7 @@ public class OrdersServiceImpl implements OrdersService {
             detail.setNumber(item.getNumber());
             detail.setDishFlavor(item.getDishFlavor());
             detail.setDishId(item.getDishId());
-            detail.setSetmealId(item.getSetmealId());
+            detail.setComboId(item.getComboId());
             detail.setName(item.getName());
             detail.setImage(item.getImage());
             detail.setAmount(item.getAmount());
@@ -121,7 +121,7 @@ public class OrdersServiceImpl implements OrdersService {
             cart.setImage(detail.getImage());
             cart.setUserId(BaseContext.getCurrentId());
             cart.setDishId(detail.getDishId());
-            cart.setSetmealId(detail.getSetmealId());
+            cart.setComboId(detail.getComboId());
             cart.setDishFlavor(detail.getDishFlavor());
             cart.setNumber(detail.getNumber());
             cart.setAmount(detail.getAmount());

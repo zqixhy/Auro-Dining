@@ -163,15 +163,15 @@
             <img src="./images/close.png"/>
           </div>
         </van-dialog>
-        <van-dialog v-model="setMealDialog.show" 
+        <van-dialog v-model="comboDialog.show" 
                     :show-confirm-button="false" 
-                    class="setMealDetailsDialog" 
-                    ref="setMealDetailsDialogd"
-                    v-if="setMealDialog.show"
+                    class="comboDetailsDialog" 
+                    ref="comboDetailsDialogd"
+                    v-if="comboDialog.show"
                     >
           <div class="divContainer">
-            <div class="title">{{setMealDialog.item.name}}</div>
-              <div class="item" v-for="(item,index) in setMealDialog.item.list" :key="index">
+            <div class="title">{{comboDialog.item.name}}</div>
+              <div class="item" v-for="(item,index) in comboDialog.item.list" :key="index">
                 <el-image :src="imgPathConvert(item.image)">
                   <div slot="error" class="image-slot">
                     <img src="./images/noImg.png"/>
@@ -187,20 +187,20 @@
             </div>
           <div class="divNum">
               <div class="left">
-                <span>$</span><span>{{setMealDialog.item.price/100}}</span>
+                <span>$</span><span>{{comboDialog.item.price/100}}</span>
               </div>
               <div class="right">
-                  <div class="divSubtract" v-if="setMealDialog.item.number > 0">
-                    <img src="./images/subtract.png" @click="subtractCart(setMealDialog.item)"/>
+                  <div class="divSubtract" v-if="comboDialog.item.number > 0">
+                    <img src="./images/subtract.png" @click="subtractCart(comboDialog.item)"/>
                   </div>
-                  <div class="divDishNum">{{setMealDialog.item.number}}</div>
-                  <div class="divAdd" v-if="setMealDialog.item.number">
-                    <img src="./images/add.png" @click="addCart(setMealDialog.item)"/>
+                  <div class="divDishNum">{{comboDialog.item.number}}</div>
+                  <div class="divAdd" v-if="comboDialog.item.number">
+                    <img src="./images/add.png" @click="addCart(comboDialog.item)"/>
                   </div>
-                  <div class="addCart"  @click="addCart(setMealDialog.item)" v-if="!setMealDialog.item.number">Add to Cart</div>
+                  <div class="addCart"  @click="addCart(comboDialog.item)" v-if="!comboDialog.item.number">Add to Cart</div>
               </div>
           </div>
-          <div class="detailsDialogClose" @click="setMealDialog.show = false">
+          <div class="detailsDialogClose" @click="comboDialog.show = false">
             <img src="./images/close.png"/>
           </div>
         </van-dialog>
@@ -236,7 +236,7 @@
                 show:false,
                 item:{image:''}
               },
-              setMealDialog:{
+              comboDialog:{
                 show:false,
                 item:{}
               },
@@ -286,7 +286,7 @@
                     if(res[0].data[0].type === 1){
                       this.getDishList()
                     }else{
-                      this.getSetmealData()
+                      this.getComboData()
                     }
                   }
                 }else{
@@ -305,7 +305,7 @@
               if(type === 1){
                 this.getDishList()
               }else{
-                this.getSetmealData()
+                this.getComboData()
               }
             },
             async getDishList(){
@@ -331,18 +331,18 @@
               }
             },
 
-            async getSetmealData(){
+            async getComboData(){
               if(!this.categoryId){
                 return
               }
-              const res = await setmealListApi({categoryId:this.categoryId,status:1})
+              const res = await comboListApi({categoryId:this.categoryId,status:1})
               if(res.code === 1){
                   let dishList = res.data
                   const cartData  = this.cartData
                   if(dishList.length > 0 && cartData.length > 0){
                     dishList.forEach(dish=>{
                       cartData.forEach(cart=>{
-                        if(dish.id === cart.setmealId){
+                        if(dish.id === cart.comboId){
                           dish.number = cart.number
                         }
                       })
@@ -368,14 +368,14 @@
                 amount:item.price/100,
                 dishFlavor:item.dishFlavor,
                 dishId:undefined,
-                setmealId:undefined,
+                comboId:undefined,
                 name:item.name,
                 image:item.image
               }
               if(Array.isArray(item.flavors)){
                 params.dishId = item.id
               }else{
-                params.setmealId = item.id
+                params.comboId = item.id
               }
               const res = await addCartApi(params)
               if(res.code === 1){
@@ -384,7 +384,7 @@
                     dish.number = res.data.number
                   }
                 })
-                if(this.setMealDialog.show){
+                if(this.comboDialog.show){
                   item.number = res.data.number
                 }
                 this.getCartData()
@@ -400,7 +400,7 @@
                 }
                 if(!Array.isArray(item.flavors)){
                   params = {
-                    setmealId:item.id,
+                    comboId:item.id,
                   }
                 }
                 const res = await updateCartApi(params)
@@ -410,7 +410,7 @@
                     dish.number = (res.data.number === 0 ? undefined : res.data.number)
                   }
                 })
-                if(this.setMealDialog.show){
+                if(this.comboDialog.show){
                   item.number = (res.data.number === 0 ? undefined : res.data.number)
                 }
                 this.getCartData()
@@ -429,14 +429,14 @@
                 amount:item.amount,
                 dishFlavor:item.dishFlavor,
                 dishId:item.dishId,
-                setmealId:item.setmealId,
+                comboId:item.comboId,
                 name:item.name,
                 image:item.image
               }
               const res = await addCartApi(params)
               if(res.code === 1){
                 this.dishList.forEach(dish=>{
-                  if(dish.id === (item.dishId || item.setmealId)){
+                  if(dish.id === (item.dishId || item.comboId)){
                     dish.number = res.data.number
                   }
                 })
@@ -450,12 +450,12 @@
             async cartNumberSubtract(item){
               let params = {
                   dishId:item.dishId,
-                  setmealId:item.setmealId,
+                  comboId:item.comboId,
                 }
                 const res = await updateCartApi(params)
                 if(res.code === 1){
                 this.dishList.forEach(dish=>{
-                  if(dish.id === (item.dishId || item.setmealId)){
+                  if(dish.id === (item.dishId || item.comboId)){
                     dish.number = (res.data.number === 0 ? undefined : res.data.number)
                   }
                 })
@@ -467,7 +467,7 @@
             
             changeDishList(item){
               for(let ele of this.dishList){
-                if(ele.id === (item.setmealId || item.dishId)){
+                if(ele.id === (item.comboId || item.dishId)){
                   ele.number = item.number
                 }
               }
@@ -549,15 +549,15 @@
             },
             async dishDetails(item){
               this.detailsDialog.item = {}
-              this.setMealDialog.item = {}
+              this.comboDialog.item = {}
               if(Array.isArray(item.flavors)){
                 this.detailsDialog.item = item
                 this.detailsDialog.show = true
               }else{
-                const res = await setMealDishDetailsApi(item.id)
+                const res = await comboDishDetailsApi(item.id)
                 if(res.code === 1){
-                  this.setMealDialog.item = {...item,list:res.data}
-                  this.setMealDialog.show = true
+                  this.comboDialog.item = {...item,list:res.data}
+                  this.comboDialog.show = true
                 }else{
                   this.$notify({ type:'warning', message:res.msg});
                 }
