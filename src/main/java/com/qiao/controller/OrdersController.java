@@ -26,6 +26,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Controller for Both Backend Management and User Frontend
+ * - Backend: /page, PUT - Order management and status update for administrators
+ * - User Frontend: /userPage, /submit, /again - Order history, submit, and reorder for mobile clients
+ */
 @RestController
 @Slf4j
 @RequestMapping("/order")
@@ -37,12 +42,12 @@ public class OrdersController {
     @Autowired
     private OrdersRepository ordersRepository;
 
-    /**
-     * User order history
-     */
     @Autowired
     private OrderDetailRepository orderDetailRepository;
 
+    /**
+     * User Frontend: Get user order history with pagination
+     */
     @GetMapping("/userPage")
     public R<Map<String, Object>> getUserPage(int page, int pageSize){
         PageRequest pageRequest = PageRequest.of(page - 1, pageSize, Sort.by("orderTime").descending());
@@ -67,7 +72,7 @@ public class OrdersController {
     }
 
     /**
-     * Admin order management with dynamic filters
+     * Backend: Order management with dynamic filters (order number, time range)
      */
     @GetMapping("/page")
     public R<Map<String, Object>> getPage(int page, int pageSize, String number, String beginTime, String endTime) {
@@ -98,18 +103,27 @@ public class OrdersController {
         return R.success(pageData);
     }
 
+    /**
+     * User Frontend: Submit order
+     */
     @PostMapping("/submit")
     public R<String> submit(@RequestBody Orders orders){
         orderService.submit(orders);
         return R.success("submit success");
     }
 
+    /**
+     * User Frontend: Reorder (add items from previous order to cart)
+     */
     @PostMapping("/again")
     public R<String> again(@RequestBody Orders orders){
         orderService.again(orders);
         return R.success("success");
     }
 
+    /**
+     * Backend: Update order status
+     */
     @PutMapping
     public R<String> editStatus(@RequestBody Orders orders){
         Orders existingOrder = ordersRepository.findById(orders.getId()).orElse(null);

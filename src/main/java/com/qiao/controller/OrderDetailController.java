@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Controller for Backend Management - Order Details
+ * Handles order detail queries for backend administrators
+ */
 @RestController
 @Slf4j
 @RequestMapping("/orderDetail")

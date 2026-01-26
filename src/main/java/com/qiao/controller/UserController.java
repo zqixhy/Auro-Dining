@@ -16,6 +16,10 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Controller for User Frontend - User Authentication
+ * Handles user login, logout, and verification code sending for mobile clients
+ */
 @RestController
 @Slf4j
 @RequestMapping("/user")

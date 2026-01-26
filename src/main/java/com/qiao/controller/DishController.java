@@ -22,6 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Controller for Both Backend Management and User Frontend
+ * - Backend: /page, /{id}, POST, PUT, DELETE, /status/{status} - Dish management operations
+ * - User Frontend: /list - Get dish list for mobile client
+ */
 @RestController
 @Slf4j
 @RequestMapping("/dish")
@@ -36,6 +41,9 @@ public class DishController {
     @Autowired
     private CategoryService categoryService;
 
+    /**
+     * Backend: Pagination query for dish management
+     */
     @GetMapping("/page")
     public R<Map<String, Object>> getPage(int page, int pageSize, String name) {
         Page<Dish> pageInfo = dishService.page(page, pageSize, name);
@@ -62,7 +70,7 @@ public class DishController {
     }
 
     /**
-     * Save Dish
+     * Backend: Save new dish
      * Clears all dishCache entries to prevent stale data in the mobile list.
      */
     @PostMapping
@@ -77,7 +85,7 @@ public class DishController {
     }
 
     /**
-     * Update Dish
+     * Backend: Update dish
      * Evicts cache to ensure users see the updated price/status.
      */
     @PutMapping
@@ -91,6 +99,9 @@ public class DishController {
     }
 
 
+    /**
+     * Backend: Get dish by ID with flavors (for edit)
+     */
     @GetMapping("/{id}")
     public R<DishDto> getByIdWithDish(@PathVariable Long id){
         DishDto dishDto = dishService.getByIdWithFlavor(id);
@@ -101,6 +112,9 @@ public class DishController {
     }
 
 
+    /**
+     * Backend: Update dish status (enable/disable)
+     */
     @PostMapping("/status/{status}")
     @CacheEvict(value = "dishCache", allEntries = true)
     public R<String> changeDishStatus(@RequestParam List<Long> ids, @PathVariable Integer status){
@@ -116,6 +130,9 @@ public class DishController {
     }
 
 
+    /**
+     * Backend: Delete dish
+     */
     @DeleteMapping
     @CacheEvict(value = "dishCache", allEntries = true)
     public R<String> delete(@RequestParam List<Long> ids) {
@@ -126,7 +143,7 @@ public class DishController {
     }
 
     /**
-     * List Dishes (Used by Mobile/User side)
+     * User Frontend: Get dish list for mobile client
      * value: Cache name defined in RedisConfig.
      * key: Dynamic key based on categoryId and status.
      */

@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Controller for User Frontend - Shopping Cart
+ * Handles shopping cart operations for mobile clients
+ */
 @RestController
 @Slf4j
 @RequestMapping("/shoppingCart")

@@ -14,6 +14,10 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Controller for Backend Management - Employee Management
+ * Handles employee login, CRUD operations for backend administrators
+ */
 @RestController
 @Slf4j
 @RequestMapping("/employee")

@@ -14,7 +14,8 @@ import java.io.IOException;
 import java.util.UUID;
 
 /**
- * Common Controller for File Upload and Download
+ * Common Controller for Both Backend Management and User Frontend
+ * Handles file upload and download operations used by both admin and user interfaces
  */
 @RestController
 @RequestMapping("/common")

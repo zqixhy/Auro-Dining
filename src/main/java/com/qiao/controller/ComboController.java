@@ -20,6 +20,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Controller for Both Backend Management and User Frontend
+ * - Backend: /page, /{id}, POST, PUT, DELETE, /status/{status} - Combo management operations
+ * - User Frontend: /list, /dish/{id} - Get combo list and details for mobile client
+ */
 @RestController
 @Slf4j
 @RequestMapping("/combo")
@@ -32,6 +37,9 @@ public class ComboController {
     private CategoryService categoryService;
 
 
+    /**
+     * Backend: Pagination query for combo management
+     */
     @GetMapping("/page")
     public R<Map<String, Object>> getPage(int page, int pageSize, String name) {
         Page<Combo> pageInfo = comboService.page(page, pageSize, name);
@@ -53,7 +61,10 @@ public class ComboController {
         return R.success(pageData);
     }
 
-    // Evicts all comboCache entries to maintain consistency.
+    /**
+     * Backend: Save new combo
+     * Evicts all comboCache entries to maintain consistency.
+     */
     @PostMapping
     @CacheEvict(value = "comboCache", allEntries = true)
     public R<String> save(@RequestBody ComboDto comboDto){
@@ -65,7 +76,10 @@ public class ComboController {
         return R.success("Save successful");
     }
 
-    //Clears cache to remove deleted items from user view.
+    /**
+     * Backend: Delete combo
+     * Clears cache to remove deleted items from user view.
+     */
     @DeleteMapping
     @CacheEvict(value = "comboCache", allEntries = true)
     public R<String> delete(@RequestParam List<Long> ids){
@@ -73,7 +87,10 @@ public class ComboController {
         return R.success("Delete successful");
     }
 
-    // Clears cache to ensure status changes (e.g., Sold Out) are reflected instantly.
+    /**
+     * Backend: Update combo status (enable/disable)
+     * Clears cache to ensure status changes (e.g., Sold Out) are reflected instantly.
+     */
     @PostMapping("/status/{status}")
     @CacheEvict(value = "comboCache", allEntries = true)
     public R<String> updateStatus(@RequestParam List<Long> ids, @PathVariable Integer status){
@@ -89,6 +106,9 @@ public class ComboController {
     }
 
 
+    /**
+     * Backend: Get combo by ID with dishes (for edit)
+     */
     @GetMapping("/{id}")
     public R<ComboDto> getById(@PathVariable Long id){
         ComboDto comboDto = comboService.getByIdWithDish(id);
@@ -96,6 +116,9 @@ public class ComboController {
     }
 
 
+    /**
+     * Backend: Update combo
+     */
     @PutMapping
     @CacheEvict(value = "comboCache", allEntries = true)
     public R<String> update(@RequestBody ComboDto comboDto){
@@ -106,7 +129,7 @@ public class ComboController {
     }
 
     /**
-     * List Combos for Mobile Client
+     * User Frontend: Get combo list for mobile client
      * Caches the result using a composite key of categoryId and status.
      */
     @GetMapping("/list")
@@ -118,7 +141,7 @@ public class ComboController {
     }
 
     /**
-     * Get Combo Dish Details for Mobile Client
+     * User Frontend: Get combo dish details for mobile client
      */
     @GetMapping("/dish/{id}")
     public R<ComboDto> getDishDetails(@PathVariable Long id){

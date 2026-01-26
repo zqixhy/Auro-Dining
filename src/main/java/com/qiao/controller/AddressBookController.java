@@ -11,6 +11,10 @@ import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Controller for User Frontend - Address Book
+ * Handles address management operations for mobile clients
+ */
 @RestController
 @Slf4j
 @RequestMapping("/addressBook")
