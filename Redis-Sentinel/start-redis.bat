@@ -1,28 +1,21 @@
 @echo off
-title Redis HA Cluster Debugger
-color 0B
+:: 确保脚本在当前文件夹运行
+cd /d "%~dp0"
+title Redis HA Cluster Orchestrator
 
-echo [STARTING] Redis Master (6379)...
-start "Master-6379" cmd /k "redis-server.exe master.conf"
-timeout /t 3
+echo Starting Redis Master (6379)...
+start "Master-6379" redis-server.exe master.conf
 
-echo [STARTING] Redis Replica (6380)...
-start "Replica-6380" cmd /k "redis-server.exe slave.conf"
-timeout /t 3
+echo Starting Redis Replica (6380)...
+start "Replica-6380" redis-server.exe slave.conf
 
-echo [STARTING] Sentinel A (26379)...
-start "Sentinel-26379" cmd /k "redis-server.exe --sentinel sentinel_26379.conf"
-timeout /t 2
+echo Starting Redis Sentinels...
+start "Sentinel-26379" redis-server.exe sentinel_26379.conf --sentinel
+start "Sentinel-26380" redis-server.exe sentinel_26380.conf --sentinel
+start "Sentinel-26381" redis-server.exe sentinel_26381.conf --sentinel
 
-echo [STARTING] Sentinel B (26380)...
-start "Sentinel-26380" cmd /k "redis-server.exe --sentinel sentinel_26380.conf"
-timeout /t 2
-
-echo [STARTING] Sentinel C (26381)...
-start "Sentinel-26381" cmd /k "redis-server.exe --sentinel sentinel_26381.conf"
-
-echo ==========================================
-echo Check if 5 windows are open now.
-echo If a window is blank or shows an error, read the message.
-echo ==========================================
+echo.
+echo ======================================================
+echo   Auro-Dining: Redis HA Cluster is UP
+echo ======================================================
 pause
