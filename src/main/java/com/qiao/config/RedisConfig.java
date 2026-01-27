@@ -62,7 +62,7 @@ public class RedisConfig extends CachingConfigurerSupport {
         // Initialize Jackson Serializer
         Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
 
-        // Use your custom ObjectMapper to handle LocalDateTime and Long precision
+        // Use custom ObjectMapper to handle LocalDateTime and Long precision
         ObjectMapper mapper = new JacksonObjectMapper();
 
         mapper.activateDefaultTyping(
