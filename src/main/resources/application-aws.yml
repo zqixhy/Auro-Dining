@@ -1,0 +1,49 @@
+server:
+  port: 80
+
+spring:
+  main:
+    banner-mode: off
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://your-rds-endpoint.region.rds.amazonaws.com:5432/restaurant
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:your_password_here}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+      naming:
+        physical-strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        globally_quoted_identifiers: true
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    timeout: 3000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+  cache:
+    redis:
+      time-to-live: 1800000ms
+      cache-null-values: true
+
+reggie:
+  path: /home/ec2-user/Pictures/reggie_images/
+
+logging:
+  level:
+    root: INFO
+    com.qiao: INFO
+  file:
+    name: /home/ec2-user/auro-dining/logs/application.log
+    max-size: 10MB
+    max-history: 7

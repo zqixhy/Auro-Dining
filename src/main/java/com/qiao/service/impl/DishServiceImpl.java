@@ -6,6 +6,7 @@ import com.qiao.entity.DishFlavor;
 import com.qiao.repository.DishRepository;
 import com.qiao.service.DishFlavorService;
 import com.qiao.service.DishService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class DishServiceImpl implements DishService {
 
@@ -112,6 +114,9 @@ public class DishServiceImpl implements DishService {
         return dishRepository.findAll(pageable);
     }
 
+    /**
+     * Get dish list by category and status
+     */
     @Override
     public List<Dish> list(Long categoryId, Integer status) {
         return dishRepository.findByCategoryIdAndStatusOrderBySortAscUpdateTimeDesc(categoryId, status);

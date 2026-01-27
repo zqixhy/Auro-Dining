@@ -7,6 +7,7 @@ import com.qiao.entity.ComboDish;
 import com.qiao.repository.ComboDishRepository;
 import com.qiao.repository.ComboRepository;
 import com.qiao.service.ComboService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class ComboServiceImpl implements ComboService {
 
@@ -106,6 +108,9 @@ public class ComboServiceImpl implements ComboService {
         return comboRepository.findAll(pageable);
     }
 
+    /**
+     * Get combo list by category
+     */
     @Override
     public List<Combo> list(Combo combo) {
         return comboRepository.findByCategoryId(combo.getCategoryId());
