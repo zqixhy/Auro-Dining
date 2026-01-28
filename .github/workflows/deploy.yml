@@ -93,11 +93,11 @@ jobs:
             # Using --build to ensure code changes are applied to the new image
             # No -E needed because Docker Compose automatically reads the local .env file
             echo "=== Building and Starting Containers ==="
-            sudo -E SPRING_PROFILES_ACTIVE=aws $DOCKER_COMPOSE_CMD up -d --build
+            sudo -E SPRING_PROFILES_ACTIVE=aws \$DOCKER_COMPOSE_CMD up -d --build
           
             # Final verification of container health
             echo "=== Deployment Status ==="
-            sudo $DOCKER_COMPOSE_CMD ps
+            sudo \$DOCKER_COMPOSE_CMD ps
           
             echo "=== Deployment finished successfully ==="
           DEPLOY_SCRIPT
