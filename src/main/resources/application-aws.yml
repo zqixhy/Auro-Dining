@@ -38,7 +38,7 @@ spring:
       cache-null-values: true
 
 auro-dining:
-  path: /home/ec2-user/Pictures/auro_dining_images/
+  path: /app/images
 
 
 # Email Configuration (Recommended for production)

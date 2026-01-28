@@ -26,9 +26,13 @@ sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 docker-compose --version
 
-echo "[5/5] Creating app directory..."
+echo "[5/5] Creating app directories..."
 mkdir -p ~/auro-dining
 mkdir -p ~/auro-dining/backups
+mkdir -p ~/Pictures/auro_dining_images
+mkdir -p ~/auro-dining/logs
+chmod 755 ~/Pictures/auro_dining_images
+chmod 755 ~/auro-dining/logs
 
 echo "=========================================="
 echo "Docker setup completed."

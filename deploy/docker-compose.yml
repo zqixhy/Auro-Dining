@@ -16,14 +16,14 @@ services:
       RDS_ENDPOINT: ${RDS_ENDPOINT}
     volumes:
       - ./application-aws.yml:/app/config/application-aws.yml:ro
-      - app-data:/app/data
-      - app-logs:/app/logs
+      - app-images:/app/images:rw
+      - app-logs:/app/logs:rw
     entrypoint: []
     command: ["java", "-Xms256m", "-Xmx512m", "-XX:+UseG1GC", "-jar", "/app/app.jar",
               "--spring.config.additional-location=file:/app/config/application-aws.yml",
               "--spring.profiles.active=aws",
               "--spring.redis.host=redis",
-              "--auro-dining.path=/app/data",
+              "--auro-dining.path=/app/images",
               "--logging.file.name=/app/logs/application.log",
               "--spring.datasource.url=jdbc:postgresql://${RDS_ENDPOINT}:5432/restaurant",
               "--spring.datasource.username=${DB_USERNAME}",
@@ -41,6 +41,6 @@ services:
       - redis-data:/data
 
 volumes:
-  app-data:
+  app-images:
   app-logs:
   redis-data:
