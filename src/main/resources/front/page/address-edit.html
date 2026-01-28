@@ -26,11 +26,25 @@
                 </div>
                 <div class="divItem">
                     <span>Phone Number</span>
-                    <el-input placeholder="Phone Number" v-model="form.phone"  maxlength='20' class="inputUser"/></el-input>
+                    <el-input placeholder="Phone Number (e.g., 555-123-4567)" v-model="form.phone"  maxlength='20' class="inputUser"/></el-input>
                 </div>
                 <div class="divItem">
-                    <span>Address</span>
-                    <el-input placeholder="Address" v-model="form.detail"  maxlength='140'/></el-input>
+                    <span>Street Address</span>
+                    <el-input placeholder="Street Address (e.g., 123 Main St, Apt 4B)" v-model="form.streetAddress"  maxlength='100'/></el-input>
+                </div>
+                <div class="divItem">
+                    <span>City</span>
+                    <el-input placeholder="City" v-model="form.city"  maxlength='50'/></el-input>
+                </div>
+                <div class="divItem">
+                    <span>State</span>
+                    <el-select v-model="form.state" placeholder="Select State" class="stateSelect">
+                        <el-option v-for="state in usStates" :key="state.code" :label="state.name" :value="state.code"></el-option>
+                    </el-select>
+                </div>
+                <div class="divItem">
+                    <span>ZIP Code</span>
+                    <el-input placeholder="ZIP Code (e.g., 90001)" v-model="form.zipCode"  maxlength='10'/></el-input>
                 </div>
                 <div class="divItem divItemNote">
                     <span>Label</span>
@@ -58,14 +72,32 @@
                         form:{
                             consignee:'',
                             phone:undefined,
-                            detail:'',
+                            streetAddress:'',
+                            city:'',
+                            state:'',
+                            zipCode:'',
                             label:'company',
                         },
                         labelList:[
                             'none','company','home','school'
                         ],
                         id:undefined,
-                        activeIndex :0
+                        activeIndex :0,
+                        usStates:[
+                            {code:'AL',name:'Alabama'},{code:'AK',name:'Alaska'},{code:'AZ',name:'Arizona'},{code:'AR',name:'Arkansas'},
+                            {code:'CA',name:'California'},{code:'CO',name:'Colorado'},{code:'CT',name:'Connecticut'},{code:'DE',name:'Delaware'},
+                            {code:'FL',name:'Florida'},{code:'GA',name:'Georgia'},{code:'HI',name:'Hawaii'},{code:'ID',name:'Idaho'},
+                            {code:'IL',name:'Illinois'},{code:'IN',name:'Indiana'},{code:'IA',name:'Iowa'},{code:'KS',name:'Kansas'},
+                            {code:'KY',name:'Kentucky'},{code:'LA',name:'Louisiana'},{code:'ME',name:'Maine'},{code:'MD',name:'Maryland'},
+                            {code:'MA',name:'Massachusetts'},{code:'MI',name:'Michigan'},{code:'MN',name:'Minnesota'},{code:'MS',name:'Mississippi'},
+                            {code:'MO',name:'Missouri'},{code:'MT',name:'Montana'},{code:'NE',name:'Nebraska'},{code:'NV',name:'Nevada'},
+                            {code:'NH',name:'New Hampshire'},{code:'NJ',name:'New Jersey'},{code:'NM',name:'New Mexico'},{code:'NY',name:'New York'},
+                            {code:'NC',name:'North Carolina'},{code:'ND',name:'North Dakota'},{code:'OH',name:'Ohio'},{code:'OK',name:'Oklahoma'},
+                            {code:'OR',name:'Oregon'},{code:'PA',name:'Pennsylvania'},{code:'RI',name:'Rhode Island'},{code:'SC',name:'South Carolina'},
+                            {code:'SD',name:'South Dakota'},{code:'TN',name:'Tennessee'},{code:'TX',name:'Texas'},{code:'UT',name:'Utah'},
+                            {code:'VT',name:'Vermont'},{code:'VA',name:'Virginia'},{code:'WA',name:'Washington'},{code:'WV',name:'West Virginia'},
+                            {code:'WI',name:'Wisconsin'},{code:'WY',name:'Wyoming'},{code:'DC',name:'District of Columbia'}
+                        ]
                     }
                 },
                 computed:{},
@@ -106,13 +138,32 @@
                             this.$notify({ type:'warning', message:'Please enter phone number'});
                             return 
                         }
-                        if(!form.detail){
-                            this.$notify({ type:'warning', message:'Please enter address'});
+                        if(!form.streetAddress){
+                            this.$notify({ type:'warning', message:'Please enter street address'});
                             return 
                         }
-                        const reg = /^1[3|4|5|7|8][0-9]{9}$/
-                        if(!reg.test(form.phone)){
-                            this.$notify({ type:'warning', message:'Invalid phone number'});
+                        if(!form.city){
+                            this.$notify({ type:'warning', message:'Please enter city'});
+                            return 
+                        }
+                        if(!form.state){
+                            this.$notify({ type:'warning', message:'Please select state'});
+                            return 
+                        }
+                        if(!form.zipCode){
+                            this.$notify({ type:'warning', message:'Please enter ZIP code'});
+                            return 
+                        }
+                        // US phone number validation (supports formats: 555-123-4567, (555) 123-4567, 5551234567)
+                        const phoneReg = /^[\d\s\-\(\)]+$/
+                        if(!phoneReg.test(form.phone) || form.phone.replace(/\D/g, '').length < 10){
+                            this.$notify({ type:'warning', message:'Invalid phone number format'});
+                            return  
+                        }
+                        // ZIP code validation (5 digits or 5+4 format)
+                        const zipReg = /^\d{5}(-\d{4})?$/
+                        if(!zipReg.test(form.zipCode)){
+                            this.$notify({ type:'warning', message:'Invalid ZIP code format (e.g., 90001 or 90001-1234)'});
                             return  
                         }
                         let res= {}

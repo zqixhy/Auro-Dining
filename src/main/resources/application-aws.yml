@@ -6,9 +6,10 @@ spring:
     banner-mode: off
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://your-rds-endpoint.region.rds.amazonaws.com:5432/restaurant
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:your_password_here}
+    # RDS endpoint, username, and password are overridden via command line arguments in docker-compose.yml
+    url: jdbc:postgresql://localhost:5432/restaurant
+    username: postgres
+    password: placeholder
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -36,8 +37,14 @@ spring:
       time-to-live: 1800000ms
       cache-null-values: true
 
-reggie:
-  path: /home/ec2-user/Pictures/reggie_images/
+auro-dining:
+  path: /home/ec2-user/Pictures/auro_dining_images/
+
+
+# Email Configuration (Recommended for production)
+email:
+  provider: ses
+  from: zqixhy@gmail.com
 
 logging:
   level:

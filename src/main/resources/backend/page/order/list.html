@@ -38,11 +38,21 @@
     flex: 1;
     color: #333333;
   }
+  .demo-notice {
+    background: #f0f4f8;
+    color: #5a6c7d;
+    font-size: 12px;
+    padding: 8px 16px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    border-left: 4px solid #94a3b8;
+  }
   </style>
 </head>
 <body>
   <div class="dashboard-container" id="order-app" v-loading="loading">
     <div class="container">
+      <div class="demo-notice"><strong>Demo only.</strong> No real payment or delivery. "Send" / "Finish" are for demo workflow only.</div>
       <div class="tableBar">
         <el-input v-model="input" placeholder="Search by order number" style="width: 250px">
           <i slot="prefix" class="el-input__icon el-icon-search" style="cursor: pointer" @click="init"></i>
@@ -83,11 +93,11 @@
             </el-button>
             <el-divider v-if="row.status === 2" direction="vertical"></el-divider>
             <el-button v-if="row.status === 2" type="text" @click="cancelOrDeliveryOrComplete(3, row.id)" class="blueBug">
-              send
+              mark sent (demo)
             </el-button>
             <el-divider v-if="row.status === 3" direction="vertical"></el-divider>
             <el-button v-if="row.status === 3" type="text" @click="cancelOrDeliveryOrComplete(4, row.id)" class="blueBug">
-              finish
+              mark complete (demo)
             </el-button>
           </template>
         </el-table-column>

@@ -35,7 +35,17 @@ spring:
       time-to-live: 1800000ms
       cache-null-values: true
 
-reggie:
-  path: ${user.home}/Pictures/reggie_images/
+auro-dining:
+  path: ${user.home}/Pictures/auro_dining_images/
 
+sms:
+  provider: log
+  fixed-code: 1234
+
+email:
+  provider: log
+  # For testing: set a fixed code (e.g., "1234") to always use this code
+  fixed-code: 1234
+  # Sender email address (must be verified in AWS SES for production)
+  from: zqixhy@gmail.com
 

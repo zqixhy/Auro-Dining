@@ -28,16 +28,17 @@ public class AddressBook implements Serializable {
     // Phone Number
     private String phone;
 
-    // Area Codes
-    private String provinceCode;
-    private String provinceName;
-    private String cityCode;
-    private String cityName;
-    private String districtCode;
-    private String districtName;
+    // Street Address (e.g., "123 Main St, Apt 4B")
+    private String streetAddress;
 
-    // Detailed Address
-    private String detail;
+    // City
+    private String city;
+
+    // State (2-letter abbreviation, e.g., "CA", "NY", "TX")
+    private String state;
+
+    // ZIP Code (5-digit or 9-digit format)
+    private String zipCode;
 
     // Label (e.g., Home, Company)
     private String label;

@@ -23,7 +23,15 @@
                 <div class="divItem" v-for="(item,index) in addressList" :key="index" @click.capture="itemClick(item)">
                     <div class="divAddress">
                         <span :class="{spanCompany:item.label === 'company',spanHome:item.label === 'home',spanSchool:item.label === 'school'}">{{item.label}}</span>
-                        {{item.detail}}
+                        <div v-if="item.streetAddress || item.city || item.state || item.zipCode">
+                            <div v-if="item.streetAddress">{{item.streetAddress}}</div>
+                            <div v-if="item.city || item.state || item.zipCode">
+                                <span v-if="item.city">{{item.city}}</span><span v-if="item.city && item.state">, </span>
+                                <span v-if="item.state">{{item.state}}</span>
+                                <span v-if="item.zipCode"> {{item.zipCode}}</span>
+                            </div>
+                        </div>
+                        <div v-else>{{item.detail || 'No address'}}</div>
                     </div>
                     <div class="divUserPhone">
                         <span>{{item.consignee}}</span>

@@ -11,9 +11,11 @@
         <link rel="stylesheet" href="../styles/vant.min.css"/>
         <link rel="stylesheet" href="../styles/index.css" />
         <link rel="stylesheet" href="./../styles/add-order.css" />
+        <link rel="stylesheet" href="./../styles/demo-disclaimer.css" />
     </head>
     <body>
         <div id="add_order" class="app">
+            <div class="demo-disclaimer">Demo only. <strong>No payment</strong> will be charged. <strong>No delivery</strong> will be made.</div>
             <div class="divHead">
                 <div class="divTitle">
                     <i class="el-icon-arrow-left" @click="goBack"></i>Aura Dining
@@ -23,7 +25,17 @@
                 <div class="divAddress">
                     <div @click="toAddressPage" class="addressContainer">                    
                         <div class="addressInfo">
-                            <div class="address">{{address.detail}}</div>
+                            <div class="address">
+                                <div v-if="address.streetAddress || address.city || address.state || address.zipCode">
+                                    <div v-if="address.streetAddress">{{address.streetAddress}}</div>
+                                    <div v-if="address.city || address.state || address.zipCode">
+                                        <span v-if="address.city">{{address.city}}</span><span v-if="address.city && address.state">, </span>
+                                        <span v-if="address.state">{{address.state}}</span>
+                                        <span v-if="address.zipCode"> {{address.zipCode}}</span>
+                                    </div>
+                                </div>
+                                <div v-else>{{address.detail || 'No address selected'}}</div>
+                            </div>
                             <div class="contactInfo">
                                 <div class="nameSection">
                                     <span class="name">{{address.consignee}}</span>
@@ -35,7 +47,7 @@
                         </div>
                         <i class="el-icon-arrow-right"></i>
                     </div>
-                    <div class="divFinishTime">Estimated Delivery: {{finishTime}}</div>
+                    <div class="divFinishTime">Delivery: N/A (demo — no real delivery)</div>
                 </div>
                 <div class="order">
                     <div class="title">Order Details</div>
@@ -79,7 +91,7 @@
                     <span>{{goodsPrice}}</span>
                 </div>
                 <div class="divPrice"></div>
-                <div :class="{btnSubmitActive: cartData && cartData.length > 0, btnSubmit:!cartData || cartData.length<1}" @click="goToPaySuccess">Place Order</div>
+                <div :class="{btnSubmitActive: cartData && cartData.length > 0, btnSubmit:!cartData || cartData.length<1}" @click="goToPaySuccess">Submit (Demo)</div>
               </div>
         </div>
         <script src="../../backend/plugins/vue/vue.js"></script>
@@ -99,6 +111,10 @@
                         address:{
                             phone:'',
                             consignee:'',
+                            streetAddress:'',
+                            city:'',
+                            state:'',
+                            zipCode:'',
                             detail:'',
                             id:undefined
                         },

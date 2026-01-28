@@ -22,6 +22,8 @@ public class User implements Serializable {
 
     private String phone;
 
+    private String email;
+
     // Map the database field 'id_number' to the Java field
     @Column(name = "id_number")
     private String idNumber;

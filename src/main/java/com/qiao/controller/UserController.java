@@ -2,6 +2,7 @@ package com.qiao.controller;
 
 import com.qiao.common.R;
 import com.qiao.entity.User;
+import com.qiao.service.EmailService;
 import com.qiao.service.UserService;
 import com.qiao.utils.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -31,73 +32,92 @@ public class UserController {
     @Autowired
     private RedisTemplate redisTemplate;
 
+    @Autowired(required = false)
+    private EmailService emailService;
+
     /**
-     * Send verification code via phone
+     * Send verification code via email
      */
     @PostMapping("/sendMsg")
     public R<String> sendMsg(@RequestBody User user){
-        String phone = user.getPhone();
-        if(phone != null){
-            try {
-                // Generate 4-digit code
-                String code = ValidateCodeUtils.generateValidateCode(4).toString();
-                log.info("Verification code for {}: {}", phone, code);
-
-                // Store code in Redis for 5 minutes
-                redisTemplate.opsForValue().set(phone, code, 5, TimeUnit.MINUTES);
-
-                return R.success("Send success");
-            } catch (Exception e) {
-                log.error("Failed to send verification code due to Redis issue", e);
-                return R.error("Service temporarily unavailable. Please try again later.");
-            }
+        String email = user.getEmail();
+        
+        if(email == null || email.isEmpty()){
+            return R.error("Please provide email address");
         }
-        return R.error("Send failed");
+        
+        try {
+            // Generate 4-digit code
+            String code = ValidateCodeUtils.generateValidateCode(4).toString();
+            log.info("Verification code for email {}: {}", email, code);
+
+            // Send email via configured service (AWS SES or Log)
+            if (emailService != null) {
+                boolean sent = emailService.sendVerificationCode(email, code);
+                if (!sent) {
+                    log.warn("Failed to send email, but code is still stored in Redis for testing");
+                }
+            } else {
+                // Fallback: just log (for backward compatibility)
+                log.info("No email service configured. Code: {}", code);
+            }
+
+            // Store code in Redis for 5 minutes (use email as key)
+            redisTemplate.opsForValue().set("email:" + email, code, 5, TimeUnit.MINUTES);
+
+            return R.success("Verification code sent to email");
+        } catch (Exception e) {
+            log.error("Failed to send verification code to email", e);
+            return R.error("Service temporarily unavailable. Please try again later.");
+        }
     }
 
     /**
-     * Mobile User Login
+     * Mobile User Login via email
      */
     @PostMapping("/login")
     public R<User> login(HttpServletRequest request, @RequestBody Map map){
-        Object phoneObj = map.get("phone");
+        Object emailObj = map.get("email");
         Object codeObj = map.get("code");
 
-        if(phoneObj == null || codeObj == null){
-            return R.error("Login failed: Phone or code is missing");
+        if(emailObj == null || emailObj.toString().isEmpty()){
+            return R.error("Login failed: Email is missing");
+        }
+        
+        if(codeObj == null){
+            return R.error("Login failed: Verification code is missing");
         }
 
-        String phone = phoneObj.toString();
+        String email = emailObj.toString();
         String code = codeObj.toString();
-
-        log.info("Attempting login: phone={}, code={}", phone, code);
+        log.info("Attempting login: email={}, code={}", email, code);
 
         try {
             // 1. Verify code from Redis
-            Object cachedCode = redisTemplate.opsForValue().get(phone);
-            if(cachedCode != null && cachedCode.equals(code)){
-
-                // 2. Check if user exists in database
-                User user = userService.getByPhone(phone);
-
-                // 3. Auto-register if user is new
-                if(user == null){
-                    user = new User();
-                    user.setPhone(phone);
-                    user.setStatus(1); // Default status: enabled
-                    userService.save(user);
-                }
-
-                // 4. Store user ID in session
-                request.getSession().setAttribute("user", user.getId());
-
-                // 5. Clear Redis code after successful login
-                redisTemplate.delete(phone);
-
-                return R.success(user);
+            String cacheKey = "email:" + email;
+            Object cachedCode = redisTemplate.opsForValue().get(cacheKey);
+            if(cachedCode == null || !cachedCode.equals(code)){
+                return R.error("Login failed: Invalid code");
             }
 
-            return R.error("Login failed: Invalid code");
+            // 2. Check if user exists in database
+            User user = userService.getByEmail(email);
+
+            // 3. Auto-register if user is new
+            if(user == null){
+                user = new User();
+                user.setEmail(email);
+                user.setStatus(1); // Default status: enabled
+                userService.save(user);
+            }
+
+            // 4. Store user ID in session
+            request.getSession().setAttribute("user", user.getId());
+
+            // 5. Clear Redis code after successful login
+            redisTemplate.delete(cacheKey);
+
+            return R.success(user);
         } catch (Exception e) {
             log.error("Login failed due to Redis issue", e);
             return R.error("Service temporarily unavailable. Please try again later.");

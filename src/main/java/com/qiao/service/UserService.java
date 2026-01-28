@@ -7,6 +7,9 @@ public interface UserService {
     // Find user by phone for login
     User getByPhone(String phone);
 
+    // Find user by email for login
+    User getByEmail(String email);
+
     // Save or update user
     User save(User user);
 

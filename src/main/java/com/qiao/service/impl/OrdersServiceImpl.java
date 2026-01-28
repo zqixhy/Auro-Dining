@@ -71,10 +71,30 @@ public class OrdersServiceImpl implements OrdersService {
         orders.setUserName(user.getName() != null ? user.getName() : "");
         orders.setConsignee(addressBook.getConsignee());
         orders.setPhone(addressBook.getPhone());
-        orders.setAddress((addressBook.getProvinceName() == null ? "" : addressBook.getProvinceName())
-                + (addressBook.getCityName() == null ? "" : addressBook.getCityName())
-                + (addressBook.getDistrictName() == null ? "" : addressBook.getDistrictName())
-                + (addressBook.getDetail() == null ? "" : addressBook.getDetail()));
+        // Format US address: Street Address, City, State ZIP Code
+        StringBuilder addressBuilder = new StringBuilder();
+        if (addressBook.getStreetAddress() != null && !addressBook.getStreetAddress().isEmpty()) {
+            addressBuilder.append(addressBook.getStreetAddress());
+        }
+        if (addressBook.getCity() != null && !addressBook.getCity().isEmpty()) {
+            if (addressBuilder.length() > 0) {
+                addressBuilder.append(", ");
+            }
+            addressBuilder.append(addressBook.getCity());
+        }
+        if (addressBook.getState() != null && !addressBook.getState().isEmpty()) {
+            if (addressBuilder.length() > 0) {
+                addressBuilder.append(", ");
+            }
+            addressBuilder.append(addressBook.getState());
+        }
+        if (addressBook.getZipCode() != null && !addressBook.getZipCode().isEmpty()) {
+            if (addressBuilder.length() > 0) {
+                addressBuilder.append(" ");
+            }
+            addressBuilder.append(addressBook.getZipCode());
+        }
+        orders.setAddress(addressBuilder.toString());
 
         // Calculate total amount
         BigDecimal amount = BigDecimal.ZERO;

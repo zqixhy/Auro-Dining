@@ -10,9 +10,11 @@
         <link rel="stylesheet" href="../../backend/plugins/element-ui/index.css" />
         <link rel="stylesheet" href="../styles/index.css" />
         <link rel="stylesheet" href="./../styles/pay-success.css" />
+        <link rel="stylesheet" href="./../styles/demo-disclaimer.css" />
     </head>
     <body>
         <div id="pay_success" class="app">
+            <div class="demo-disclaimer">Demo only. No payment was charged. No delivery will be made.</div>
             <div class="divHead">
                 <div class="divTitle">
                     <i class="el-icon-arrow-left" @click="goBack"></i>
@@ -22,7 +24,8 @@
             </div>
             <div class="divContent">
                 <img src="./../images/success.png"/>
-                <div class="divSuccess">Order Success</div>
+                <div class="divSuccess">Order Submitted</div>
+                <div class="demo-success-note">This is a demo. No payment was charged. No delivery will be made.</div>
                 <div class="btnView" @click="toOrderPage">View Order Details</div>
             </div>
         </div>

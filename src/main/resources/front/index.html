@@ -11,9 +11,11 @@
     <link rel="stylesheet" href="styles/vant.min.css"/>
     <link rel="stylesheet" href="styles/index.css" />
     <link rel="stylesheet" href="styles/main.css" />
+    <link rel="stylesheet" href="styles/demo-disclaimer.css" />
   </head>
   <body>
     <div id="main" class="app">
+      <div class="demo-disclaimer-subtle">Demo only. No real payment or delivery.</div>
       <div class="divHead">
         <img src="./images/user.png" @click="toUserPage"/>
       </div>
@@ -75,7 +77,7 @@
               <span>{{goodsPrice}}</span>
           </div>
           <div class="divPrice"></div>
-          <div :class="{btnSubmitActive: cartData && cartData.length > 0, btnSubmit:!cartData || cartData.length<1}" @click="toAddOrderPage">Check Out</div>
+          <div :class="{btnSubmitActive: cartData && cartData.length > 0, btnSubmit:!cartData || cartData.length<1}" @click="toAddOrderPage">Check Out (Demo)</div>
         </div>
         <van-dialog v-model="dialogFlavor.show" :show-confirm-button="false" class="dialogFlavor" ref="flavorDialog">
           <div class="dialogTitle">{{dialogFlavor.name}}</div>
