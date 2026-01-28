@@ -127,11 +127,28 @@ jobs:
             BUILD_ARGS=""
             [ "${{ inputs.force_rebuild }}" == "true" ] && BUILD_ARGS="--no-cache"
           
-            sudo docker buildx version || {
-            echo "Buildx missing, linking..."
-            sudo mkdir -p /usr/local/lib/docker/cli-plugins
-            sudo ln -sf $HOME/.docker/cli-plugins/docker-buildx /usr/local/lib/docker/cli-plugins/docker-buildx
-          }
+            # Ensure Buildx is available and configured
+            echo "Checking Docker Buildx..."
+            if ! sudo docker buildx version >/dev/null 2>&1; then
+              echo "Buildx not found, checking installation..."
+              if [ -f /usr/local/lib/docker/cli-plugins/docker-buildx ]; then
+                echo "Buildx found in system location"
+              elif [ -f $HOME/.docker/cli-plugins/docker-buildx ]; then
+                echo "Linking Buildx to system location..."
+                sudo mkdir -p /usr/local/lib/docker/cli-plugins
+                sudo cp $HOME/.docker/cli-plugins/docker-buildx /usr/local/lib/docker/cli-plugins/docker-buildx
+                sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
+              else
+                echo "WARNING: Buildx not found, but continuing..."
+              fi
+            fi
+            
+            # Create and use default builder if needed
+            sudo docker buildx ls >/dev/null 2>&1 || sudo docker buildx create --name default --use 2>/dev/null || true
+            sudo docker buildx inspect --bootstrap >/dev/null 2>&1 || true
+            
+            echo "Buildx version:"
+            sudo docker buildx version || echo "Buildx check completed"
             
             # Use -E to preserve environment variables
             sudo -E $DOCKER_COMPOSE_CMD build $BUILD_ARGS

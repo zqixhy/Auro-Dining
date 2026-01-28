@@ -18,17 +18,26 @@ echo "Downloading Buildx from: $BUILDX_URL"
 curl -L "$BUILDX_URL" -o $DOCKER_CONFIG/cli-plugins/docker-buildx
 chmod +x $DOCKER_CONFIG/cli-plugins/docker-buildx
 
+# Install Buildx to system-wide location for sudo access
 sudo mkdir -p /usr/local/lib/docker/cli-plugins
 sudo cp $DOCKER_CONFIG/cli-plugins/docker-buildx /usr/local/lib/docker/cli-plugins/docker-buildx
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
+
+# Create and use default builder instance
+sudo docker buildx create --name default --use 2>/dev/null || sudo docker buildx use default 2>/dev/null || true
+sudo docker buildx inspect --bootstrap || true
 
 # Installing Docker Compose V2
 sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
 # Verify installation
+echo "Verifying installations..."
 docker version --format 'Docker Version: {{.Server.Version}}'
-docker buildx version
-/usr/local/bin/docker-compose version
+echo "Buildx version:"
+sudo docker buildx version || docker buildx version
+echo "Docker Compose version:"
+/usr/local/bin/docker-compose version || docker compose version
 
 echo "Creating application directories..."
 mkdir -p ~/auro-dining/backups
