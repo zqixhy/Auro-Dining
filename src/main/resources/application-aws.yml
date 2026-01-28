@@ -7,7 +7,7 @@ spring:
   datasource:
     driver-class-name: org.postgresql.Driver
     # RDS endpoint, username, and password are overridden via command line arguments in docker-compose.yml
-    url: jdbc:postgresql://${RDS_ENDPOINT}:5432/auro-dining-db
+    url: jdbc:postgresql://${RDS_ENDPOINT}:5432/restaurant
       username: ${DB_USERNAME}
       password: ${DB_PASSWORD}
       driver-class-name: org.postgresql.Driver
