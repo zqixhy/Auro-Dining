@@ -1,54 +1,76 @@
-- name: Deploy on EC2 (Docker)
-    env:
-      RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}
-      DB_USERNAME: ${{ secrets.DB_USERNAME }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      FORCE_REBUILD: ${{ inputs.force_rebuild }}
-    run: |
-      ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST << 'DEPLOY_SCRIPT'
-        set -e
-        set -x
-      
-        # Ensure /usr/local/bin is in PATH for all sudo commands
-        export PATH=$PATH:/usr/local/bin
-      
-        echo "=== Starting deployment ==="
-        cd ~/auro-dining || { echo "ERROR: Directory ~/auro-dining not found"; exit 1; }
-      
-        # Move deployment artifacts from 'incoming' to project root
-        echo "=== Updating application files ==="
-        mv -f incoming/auro-dining-0.0.1-SNAPSHOT.jar .
-        mv -f incoming/application-aws.yml .
-        mv -f incoming/Dockerfile .
-        mv -f incoming/docker-compose.yml .
-        # Cleanup staging folder
-        rm -rf incoming
-      
-        # Use absolute path to bypass any shell detection issues
-        DOCKER_COMPOSE_CMD="/usr/local/bin/docker-compose"
-        echo "Using command: $DOCKER_COMPOSE_CMD"
-      
-        # Export database secrets for the Docker containers
-        export RDS_ENDPOINT="${{ secrets.RDS_ENDPOINT }}"
-        export DB_USERNAME="${{ secrets.DB_USERNAME }}"
-        export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-      
-        # Handle the Force Rebuild flag from GitHub UI
-        BUILD_ARGS=""
-        if [ "${{ inputs.force_rebuild }}" == "true" ]; then
-          echo "Force rebuild triggered."
-          BUILD_ARGS="--no-cache"
-        fi
-      
-        # Execute the build and start the application
-        echo "=== Building Docker image ==="
-        sudo -E $DOCKER_COMPOSE_CMD build $BUILD_ARGS
-      
-        echo "=== Starting containers ==="
-        sudo -E $DOCKER_COMPOSE_CMD up -d
-      
-        # Final health check of the local containers
-        sudo $DOCKER_COMPOSE_CMD ps
-      
-        echo "=== Deployment completed successfully ==="
-      DEPLOY_SCRIPT
+name: Aura Dining CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild Docker image (no cache)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'corretto'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+
+      - name: Prepare deployment package
+        run: |
+          mkdir -p deploy-package
+          cp target/auro-dining-0.0.1-SNAPSHOT.jar deploy-package/
+          cp src/main/resources/application-aws.yml deploy-package/
+          cp Dockerfile deploy-package/
+          cp deploy/docker-compose.yml deploy-package/
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy files to EC2
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USERNAME || 'ec2-user' }}@${{ secrets.EC2_HOST }} "mkdir -p ~/auro-dining/incoming"
+          scp -i ~/.ssh/deploy_key deploy-package/* ${{ secrets.EC2_USERNAME || 'ec2-user' }}@${{ secrets.EC2_HOST }}:~/auro-dining/incoming/
+
+      - name: Deploy on EC2 (Docker)
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USERNAME || 'ec2-user' }}@${{ secrets.EC2_HOST }} << 'DEPLOY_SCRIPT'
+            set -e
+            export PATH=$PATH:/usr/local/bin
+          
+            cd ~/auro-dining
+            mv -f incoming/* .
+            rm -rf incoming
+
+            DOCKER_COMPOSE_CMD="/usr/local/bin/docker-compose"
+          
+            export RDS_ENDPOINT="${{ secrets.RDS_ENDPOINT }}"
+            export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          
+            BUILD_ARGS=""
+            if [ "${{ inputs.force_rebuild }}" == "true" ]; then
+              BUILD_ARGS="--no-cache"
+            fi
+
+            sudo -E $DOCKER_COMPOSE_CMD build $BUILD_ARGS
+            sudo -E $DOCKER_COMPOSE_CMD up -d
+            sudo $DOCKER_COMPOSE_CMD ps
+          DEPLOY_SCRIPT
