@@ -34,168 +34,106 @@ jobs:
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'corretto'
-        cache: maven
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'corretto'
+          cache: maven
 
-    - name: Build with Maven
-      run: |
-        SKIP_TESTS="${{ inputs.skip_tests }}"
-        if [ -z "$SKIP_TESTS" ] || [ "$SKIP_TESTS" == "true" ]; then
-          echo "Skipping tests..."
-          mvn clean package -DskipTests
-        else
-          echo "Running full test suite..."
-          mvn clean package
-        fi
-
-    - name: Prepare deployment package
-      run: |
-        mkdir -p deploy-package
-        cp target/auro-dining-0.0.1-SNAPSHOT.jar deploy-package/
-        cp src/main/resources/application-aws.yml deploy-package/
-        cp Dockerfile deploy-package/
-        cp deploy/docker-compose.yml deploy-package/
-        cp deploy/install-docker.sh deploy-package/
-        cp deploy/rollback-docker.sh deploy-package/
-
-    - name: Setup SSH
-      run: |
-        mkdir -p ~/.ssh
-        echo "$EC2_SSH_KEY" > ~/.ssh/deploy_key
-        chmod 600 ~/.ssh/deploy_key
-        ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
-
-    - name: Copy files to EC2
-      run: |
-        ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST "mkdir -p ~/auro-dining/incoming"
-        scp -i ~/.ssh/deploy_key \
-          deploy-package/auro-dining-0.0.1-SNAPSHOT.jar \
-          deploy-package/application-aws.yml \
-          deploy-package/Dockerfile \
-          deploy-package/docker-compose.yml \
-          deploy-package/install-docker.sh \
-          deploy-package/rollback-docker.sh \
-          ${EC2_USERNAME:-ec2-user}@$EC2_HOST:~/auro-dining/incoming/
-
-    - name: Deploy on EC2 (Docker)
-      env:
-        RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}
-        DB_USERNAME: ${{ secrets.DB_USERNAME }}
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        FORCE_REBUILD: ${{ inputs.force_rebuild }}
-        DEPLOYMENT_NOTE: ${{ inputs.deployment_note }}
-      run: |
-        ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST << DEPLOY_SCRIPT
-          set -e
-          set -x  # Enable debug output
-          
-          echo "=== Starting deployment ==="
-          echo "Deployment note: ${DEPLOYMENT_NOTE:-Manual deployment}"
-          echo "Force rebuild: ${FORCE_REBUILD:-false}"
-          cd ~/auro-dining || { echo "ERROR: Cannot cd to ~/auro-dining"; exit 1; }
-
-          echo "=== Checking installation ==="
-          if [ ! -f .installed ]; then
-            echo "Running install script..."
-            chmod +x incoming/install-docker.sh || { echo "ERROR: Cannot chmod install script"; exit 1; }
-            ./incoming/install-docker.sh || { echo "ERROR: Install script failed"; exit 1; }
-            touch .installed
+      - name: Build with Maven
+        run: |
+          SKIP_TESTS="${{ inputs.skip_tests }}"
+          if [ -z "$SKIP_TESTS" ] || [ "$SKIP_TESTS" == "true" ]; then
+            mvn clean package -DskipTests
           else
-            echo "Already installed, skipping install script"
+            mvn clean package
           fi
 
-          echo "=== Backing up existing JAR ==="
-          if [ -f auro-dining-0.0.1-SNAPSHOT.jar ]; then
-            mkdir -p backups
-            cp auro-dining-0.0.1-SNAPSHOT.jar "backups/auro-dining-$(date +%Y%m%d-%H%M%S).jar" || { echo "WARNING: Backup failed"; }
-            ls -t backups/*.jar 2>/dev/null | tail -n +6 | xargs -r rm -f || true
-          else
-            echo "No existing JAR to backup"
-          fi
+      - name: Prepare deployment package
+        run: |
+          mkdir -p deploy-package
+          cp target/auro-dining-0.0.1-SNAPSHOT.jar deploy-package/
+          cp src/main/resources/application-aws.yml deploy-package/
+          cp Dockerfile deploy-package/
+          cp deploy/docker-compose.yml deploy-package/
+          cp deploy/install-docker.sh deploy-package/
+          cp deploy/rollback-docker.sh deploy-package/
+          # Convert line endings to prevent Windows CRLF from breaking Linux scripts
+          sed -i 's/\r$//' deploy-package/install-docker.sh
 
-          echo "=== Moving new files ==="
-          mv -f incoming/auro-dining-0.0.1-SNAPSHOT.jar . || { echo "ERROR: Cannot move JAR file"; exit 1; }
-          mv -f incoming/application-aws.yml . || { echo "ERROR: Cannot move application-aws.yml"; exit 1; }
-          mv -f incoming/Dockerfile . || { echo "ERROR: Cannot move Dockerfile"; exit 1; }
-          mv -f incoming/docker-compose.yml . || { echo "ERROR: Cannot move docker-compose.yml"; exit 1; }
-          [ -f incoming/install-docker.sh ] && mv -f incoming/install-docker.sh . || true
-          [ -f incoming/rollback-docker.sh ] && mv -f incoming/rollback-docker.sh . && chmod +x rollback-docker.sh || true
-          rm -rf incoming
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
 
-          echo "=== Setting environment variables ==="
-          export RDS_ENDPOINT="$RDS_ENDPOINT"
-          export DB_USERNAME="$DB_USERNAME"
-          export DB_PASSWORD="$DB_PASSWORD"
+      - name: Copy files to EC2
+        run: |
+          ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST "mkdir -p ~/auro-dining/incoming"
+          scp -i ~/.ssh/deploy_key \
+            deploy-package/* \
+            ${EC2_USERNAME:-ec2-user}@$EC2_HOST:~/auro-dining/incoming/
+
+      - name: Deploy on EC2 (Docker)
+        env:
+          RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          FORCE_REBUILD: ${{ inputs.force_rebuild }}
+        run: |
+          ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST << 'DEPLOY_SCRIPT'
+            set -e
+            set -x
           
-          echo "=== Checking Docker ==="
-          sudo docker --version || { echo "ERROR: Docker not found"; exit 1; }
+            # Manually add paths that sudo might lose
+            export PATH=$PATH:/usr/local/bin
           
-          DOCKER_COMPOSE_CMD=""
-          if sudo docker compose version >/dev/null 2>&1; then
-            echo "Using Docker Compose plugin (docker compose)"
-            DOCKER_COMPOSE_CMD="docker compose"
-          elif sudo docker-compose --version >/dev/null 2>&1; then
-            echo "Using Docker Compose standalone binary (docker-compose)"
-            DOCKER_COMPOSE_CMD="docker-compose"
-          else
-            echo "ERROR: Docker Compose not found, attempting to install..."
-            # Try to run install script
-            if [ -f install-docker.sh ]; then
-              chmod +x install-docker.sh
-              ./install-docker.sh || { echo "ERROR: Install script failed"; exit 1; }
-              # Re-detect
-              if sudo docker compose version >/dev/null 2>&1; then
-                DOCKER_COMPOSE_CMD="docker compose"
-              elif sudo docker-compose --version >/dev/null 2>&1; then
-                DOCKER_COMPOSE_CMD="docker-compose"
-              else
-                echo "ERROR: Docker Compose still not found after installation"; exit 1
-              fi
-            else
-              echo "ERROR: Docker Compose not found and install script not available"; exit 1
+            cd ~/auro-dining || { mkdir -p ~/auro-dining && cd ~/auro-dining; }
+          
+            if [ ! -f .installed ]; then
+              chmod +x incoming/install-docker.sh
+              ./incoming/install-docker.sh
+              touch .installed
             fi
-          fi
           
-          echo "Docker Compose command: $DOCKER_COMPOSE_CMD"
-          sudo $DOCKER_COMPOSE_CMD --version || { echo "ERROR: Cannot verify Docker Compose"; exit 1; }
+            # Move new files
+            mv -f incoming/auro-dining-0.0.1-SNAPSHOT.jar .
+            mv -f incoming/application-aws.yml .
+            mv -f incoming/Dockerfile .
+            mv -f incoming/docker-compose.yml .
+            [ -f incoming/install-docker.sh ] && mv -f incoming/install-docker.sh . || true
+            rm -rf incoming
           
-          echo "=== Ensuring Docker Buildx is available ==="
-          sudo docker buildx version >/dev/null 2>&1 || { 
-            echo "WARNING: Buildx not found, installing..."; 
-            sudo docker buildx install || echo "Buildx install skipped (may not be needed)"; 
-          }
-          sudo docker buildx ls >/dev/null 2>&1 || echo "Buildx check completed"
+            # Enhanced Docker Compose path detection
+            if [ -f /usr/local/bin/docker-compose ]; then
+              DOCKER_COMPOSE_CMD="/usr/local/bin/docker-compose"
+            elif sudo docker compose version >/dev/null 2>&1; then
+              DOCKER_COMPOSE_CMD="docker compose"
+            else
+              DOCKER_COMPOSE_CMD="docker-compose"
+            fi
           
-          echo "=== Building Docker image ==="
-          BUILD_ARGS=""
-          if [ "${FORCE_REBUILD:-false}" == "true" ]; then
-            echo "Force rebuild (no cache)..."
-            BUILD_ARGS="--no-cache"
-          else
-            echo "Building with cache..."
-          fi
-          sudo -E $DOCKER_COMPOSE_CMD build $BUILD_ARGS || { echo "ERROR: Docker build failed"; exit 1; }
+            echo "Using Docker Compose command: $DOCKER_COMPOSE_CMD"
           
-          echo "=== Starting containers ==="
-          sudo -E $DOCKER_COMPOSE_CMD up -d || { echo "ERROR: Docker compose up failed"; exit 1; }
+            export RDS_ENDPOINT="${{ secrets.RDS_ENDPOINT }}"
+            export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
           
-          echo "=== Waiting for containers to start ==="
-          sleep 5
+            BUILD_ARGS=""
+            [ "${{ inputs.force_rebuild }}" == "true" ] && BUILD_ARGS="--no-cache"
           
-          echo "=== Checking container status ==="
-          sudo $DOCKER_COMPOSE_CMD ps || { echo "ERROR: Cannot check container status"; exit 1; }
-          
-          echo "=== Deployment completed successfully ==="
-        DEPLOY_SCRIPT
+            # Use -E to preserve environment variables
+            sudo -E $DOCKER_COMPOSE_CMD build $BUILD_ARGS
+            sudo -E $DOCKER_COMPOSE_CMD up -d
+            sudo $DOCKER_COMPOSE_CMD ps
+          DEPLOY_SCRIPT
 
-    - name: Verify deployment
-      run: |
-        sleep 15
-        curl -sf "http://$EC2_HOST/" || echo "Warning: Application might not be ready yet"
+      - name: Verify deployment
+        run: |
+          sleep 15
+          curl -sf "http://$EC2_HOST/" || echo "Warning: Check Security Group Port 80/8080"
