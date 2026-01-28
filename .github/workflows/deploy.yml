@@ -1,0 +1,104 @@
+name: Aura Dining CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      EC2_HOST: ${{ secrets.EC2_HOST }}
+      EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+      EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+      RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}
+      DB_USERNAME: ${{ secrets.DB_USERNAME }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'corretto'
+        cache: maven
+
+    - name: Build with Maven
+      run: mvn clean package -DskipTests
+
+    - name: Prepare deployment package
+      run: |
+        mkdir -p deploy-package
+        cp target/auro-dining-0.0.1-SNAPSHOT.jar deploy-package/
+        cp src/main/resources/application-aws.yml deploy-package/
+        cp Dockerfile deploy-package/
+        cp deploy/docker-compose.yml deploy-package/
+        cp deploy/install-docker.sh deploy-package/
+        cp deploy/rollback-docker.sh deploy-package/
+
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "$EC2_SSH_KEY" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
+
+    - name: Copy files to EC2
+      run: |
+        ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST "mkdir -p ~/auro-dining/incoming"
+        scp -i ~/.ssh/deploy_key \
+          deploy-package/auro-dining-0.0.1-SNAPSHOT.jar \
+          deploy-package/application-aws.yml \
+          deploy-package/Dockerfile \
+          deploy-package/docker-compose.yml \
+          deploy-package/install-docker.sh \
+          deploy-package/rollback-docker.sh \
+          ${EC2_USERNAME:-ec2-user}@$EC2_HOST:~/auro-dining/incoming/
+
+    - name: Deploy on EC2 (Docker)
+      env:
+        RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}
+        DB_USERNAME: ${{ secrets.DB_USERNAME }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      run: |
+        ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST << EOF
+          set -e
+          cd ~/auro-dining
+
+          if [ ! -f .installed ]; then
+            chmod +x incoming/install-docker.sh
+            ./incoming/install-docker.sh
+            touch .installed
+          fi
+
+          if [ -f auro-dining-0.0.1-SNAPSHOT.jar ]; then
+            mkdir -p backups
+            cp auro-dining-0.0.1-SNAPSHOT.jar "backups/auro-dining-\$(date +%Y%m%d-%H%M%S).jar"
+            ls -t backups/*.jar 2>/dev/null | tail -n +6 | xargs -r rm -f
+          fi
+
+          mv -f incoming/auro-dining-0.0.1-SNAPSHOT.jar incoming/application-aws.yml incoming/Dockerfile incoming/docker-compose.yml . 2>/dev/null || true
+          [ -f incoming/install-docker.sh ] && mv -f incoming/install-docker.sh .
+          [ -f incoming/rollback-docker.sh ] && mv -f incoming/rollback-docker.sh . && chmod +x rollback-docker.sh
+          rm -rf incoming
+
+          export RDS_ENDPOINT="$RDS_ENDPOINT"
+          export DB_USERNAME="$DB_USERNAME"
+          export DB_PASSWORD="$DB_PASSWORD"
+          
+          sudo -E docker-compose build --no-cache
+          sudo -E docker-compose up -d
+          sleep 5
+          sudo docker-compose ps
+          echo "Deployment completed."
+        EOF
+
+    - name: Verify deployment
+      run: |
+        sleep 15
+        curl -sf "http://$EC2_HOST/" || echo "Warning: Application might not be ready yet"

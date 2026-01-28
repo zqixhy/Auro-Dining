@@ -1,0 +1,46 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: auro-dining:latest
+    container_name: auro-dining
+    ports:
+      - "80:80"
+    environment:
+      SPRING_PROFILES_ACTIVE: aws
+      SPRING_REDIS_HOST: redis
+      AURO_DINING_PATH: /app/data
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      RDS_ENDPOINT: ${RDS_ENDPOINT}
+    volumes:
+      - ./application-aws.yml:/app/config/application-aws.yml:ro
+      - app-data:/app/data
+      - app-logs:/app/logs
+    entrypoint: []
+    command: ["java", "-Xms256m", "-Xmx512m", "-XX:+UseG1GC", "-jar", "/app/app.jar",
+              "--spring.config.additional-location=file:/app/config/application-aws.yml",
+              "--spring.profiles.active=aws",
+              "--spring.redis.host=redis",
+              "--auro-dining.path=/app/data",
+              "--logging.file.name=/app/logs/application.log",
+              "--spring.datasource.url=jdbc:postgresql://${RDS_ENDPOINT}:5432/restaurant",
+              "--spring.datasource.username=${DB_USERNAME}",
+              "--spring.datasource.password=${DB_PASSWORD}"]
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: auro-dining-redis
+    command: ["redis-server", "--maxmemory", "200mb", "--maxmemory-policy", "allkeys-lru"]
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+
+volumes:
+  app-data:
+  app-logs:
+  redis-data:

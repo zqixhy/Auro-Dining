@@ -1,0 +1,13 @@
+target/
+.git
+.github
+*.md
+.mvn
+mvnw
+mvnw.cmd
+pom.xml
+src/
+deploy/
+*.iml
+.idea
+.vscode
