@@ -127,6 +127,12 @@ jobs:
             BUILD_ARGS=""
             [ "${{ inputs.force_rebuild }}" == "true" ] && BUILD_ARGS="--no-cache"
           
+            sudo docker buildx version || {
+            echo "Buildx missing, linking..."
+            sudo mkdir -p /usr/local/lib/docker/cli-plugins
+            sudo ln -sf $HOME/.docker/cli-plugins/docker-buildx /usr/local/lib/docker/cli-plugins/docker-buildx
+          }
+            
             # Use -E to preserve environment variables
             sudo -E $DOCKER_COMPOSE_CMD build $BUILD_ARGS
             sudo -E $DOCKER_COMPOSE_CMD up -d
