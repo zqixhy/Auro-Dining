@@ -51,26 +51,24 @@ jobs:
 
       - name: Deploy on EC2 (Docker)
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USERNAME || 'ec2-user' }}@${{ secrets.EC2_HOST }} << 'DEPLOY_SCRIPT'
+          ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST << 'DEPLOY_SCRIPT'
             set -e
             export PATH=$PATH:/usr/local/bin
-          
             cd ~/auro-dining
+          
+            echo "RDS_ENDPOINT=${{ secrets.RDS_ENDPOINT }}" > .env
+            echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+            chmod 600 .env 
+          
             mv -f incoming/* .
             rm -rf incoming
 
             DOCKER_COMPOSE_CMD="/usr/local/bin/docker-compose"
-          
-            export RDS_ENDPOINT="${{ secrets.RDS_ENDPOINT }}"
-            export DB_USERNAME="${{ secrets.DB_USERNAME }}"
-            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-          
-            BUILD_ARGS=""
-            if [ "${{ inputs.force_rebuild }}" == "true" ]; then
-              BUILD_ARGS="--no-cache"
-            fi
 
-            sudo -E $DOCKER_COMPOSE_CMD build $BUILD_ARGS
-            sudo -E $DOCKER_COMPOSE_CMD up -d
+            echo "=== Building and Starting Containers ==="
+            sudo $DOCKER_COMPOSE_CMD build
+            sudo $DOCKER_COMPOSE_CMD up -d
+          
             sudo $DOCKER_COMPOSE_CMD ps
           DEPLOY_SCRIPT
