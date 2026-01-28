@@ -22,9 +22,17 @@ echo "[3/5] Adding user to docker group..."
 sudo usermod -aG docker "$(whoami)"
 
 echo "[4/5] Installing Docker Compose..."
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-docker-compose --version
+# Install Docker Compose plugin (v2+)
+sudo mkdir -p /usr/local/lib/docker/cli-plugins
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/lib/docker/cli-plugins/docker-compose
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+# Also create symlink for backward compatibility
+sudo ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
+docker compose version
+
+echo "[4.5/5] Setting up Docker Buildx..."
+sudo docker buildx install || echo "Buildx already installed or not needed"
+sudo docker buildx version || echo "Buildx check completed"
 
 echo "[5/5] Creating app directories..."
 mkdir -p ~/auro-dining
