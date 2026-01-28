@@ -64,7 +64,7 @@ jobs:
       - name: Deploy on EC2 (Docker)
         run: |
           # The 'DEPLOY_SCRIPT' block executes commands directly on the remote server
-          ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST << 'DEPLOY_SCRIPT'
+          ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST << DEPLOY_SCRIPT
             set -e
             set -x
           
