@@ -3,28 +3,38 @@ set -e
 
 echo "=== Auro Dining - Docker environment setup ==="
 
-# 1. Update system and install Docker
+# Update system and install Docker
 sudo dnf update -y
 sudo dnf install -y docker
 sudo systemctl enable docker
 sudo systemctl start docker
 sudo usermod -aG docker ec2-user
 
-# 2. Install Docker Compose binary to standard path
-# Use specific 2.x version for stability
+# Install Docker Buildx
 DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
 mkdir -p $DOCKER_CONFIG/cli-plugins
-curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
-chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+BUILDX_URL=$(curl -s https://api.github.com/repos/docker/buildx/releases/latest | grep "browser_download_url.*linux-x86_64" | cut -d '"' -f 4)
+echo "Downloading Buildx from: $BUILDX_URL"
+curl -L "$BUILDX_URL" -o $DOCKER_CONFIG/cli-plugins/docker-buildx
+chmod +x $DOCKER_CONFIG/cli-plugins/docker-buildx
 
-# Key: Also install to /usr/local/bin to fix sudo path issues
+sudo mkdir -p /usr/local/lib/docker/cli-plugins
+sudo cp $DOCKER_CONFIG/cli-plugins/docker-buildx /usr/local/lib/docker/cli-plugins/docker-buildx
+
+# Installing Docker Compose V2
 sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
-# 3. Verify installation
-echo "Checking installations..."
-/usr/local/bin/docker-compose version || echo "Binary link failed"
-docker compose version || echo "Plugin failed"
+# Verify installation
+docker version --format 'Docker Version: {{.Server.Version}}'
+docker buildx version
+/usr/local/bin/docker-compose version
 
-# 4. Create necessary directories
-mkdir -p ~/auro-dining/backups ~/auro-dining/logs
+echo "Creating application directories..."
+mkdir -p ~/auro-dining/backups
+mkdir -p ~/auro-dining/logs
+chmod 755 ~/auro-dining/logs
+
+echo "=========================================="
+echo "Setup completed successfully!"
+echo "=========================================="
