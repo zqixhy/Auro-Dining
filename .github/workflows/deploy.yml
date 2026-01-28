@@ -5,6 +5,22 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip tests'
+        required: false
+        default: 'true'
+        type: boolean
+      force_rebuild:
+        description: 'Force rebuild Docker image (no cache)'
+        required: false
+        default: 'false'
+        type: boolean
+      deployment_note:
+        description: 'Deployment note (optional)'
+        required: false
+        default: 'Manual deployment'
+        type: string
 
 jobs:
   build-and-deploy:
@@ -29,7 +45,15 @@ jobs:
         cache: maven
 
     - name: Build with Maven
-      run: mvn clean package -DskipTests
+      run: |
+        SKIP_TESTS="${{ inputs.skip_tests }}"
+        if [ -z "$SKIP_TESTS" ] || [ "$SKIP_TESTS" == "true" ]; then
+          echo "Skipping tests..."
+          mvn clean package -DskipTests
+        else
+          echo "Running full test suite..."
+          mvn clean package
+        fi
 
     - name: Prepare deployment package
       run: |
@@ -65,12 +89,16 @@ jobs:
         RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}
         DB_USERNAME: ${{ secrets.DB_USERNAME }}
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        FORCE_REBUILD: ${{ inputs.force_rebuild }}
+        DEPLOYMENT_NOTE: ${{ inputs.deployment_note }}
       run: |
-        ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST << 'DEPLOY_SCRIPT'
+        ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST << DEPLOY_SCRIPT
           set -e
           set -x  # Enable debug output
           
           echo "=== Starting deployment ==="
+          echo "Deployment note: ${DEPLOYMENT_NOTE:-Manual deployment}"
+          echo "Force rebuild: ${FORCE_REBUILD:-false}"
           cd ~/auro-dining || { echo "ERROR: Cannot cd to ~/auro-dining"; exit 1; }
 
           echo "=== Checking installation ==="
@@ -108,23 +136,61 @@ jobs:
           
           echo "=== Checking Docker ==="
           sudo docker --version || { echo "ERROR: Docker not found"; exit 1; }
-          sudo docker compose version || { echo "ERROR: Docker Compose not found"; exit 1; }
+          
+          DOCKER_COMPOSE_CMD=""
+          if sudo docker compose version >/dev/null 2>&1; then
+            echo "Using Docker Compose plugin (docker compose)"
+            DOCKER_COMPOSE_CMD="docker compose"
+          elif sudo docker-compose --version >/dev/null 2>&1; then
+            echo "Using Docker Compose standalone binary (docker-compose)"
+            DOCKER_COMPOSE_CMD="docker-compose"
+          else
+            echo "ERROR: Docker Compose not found, attempting to install..."
+            # Try to run install script
+            if [ -f install-docker.sh ]; then
+              chmod +x install-docker.sh
+              ./install-docker.sh || { echo "ERROR: Install script failed"; exit 1; }
+              # Re-detect
+              if sudo docker compose version >/dev/null 2>&1; then
+                DOCKER_COMPOSE_CMD="docker compose"
+              elif sudo docker-compose --version >/dev/null 2>&1; then
+                DOCKER_COMPOSE_CMD="docker-compose"
+              else
+                echo "ERROR: Docker Compose still not found after installation"; exit 1
+              fi
+            else
+              echo "ERROR: Docker Compose not found and install script not available"; exit 1
+            fi
+          fi
+          
+          echo "Docker Compose command: $DOCKER_COMPOSE_CMD"
+          sudo $DOCKER_COMPOSE_CMD --version || { echo "ERROR: Cannot verify Docker Compose"; exit 1; }
           
           echo "=== Ensuring Docker Buildx is available ==="
-          sudo docker buildx version || { echo "WARNING: Buildx not found, installing..."; sudo docker buildx install || true; }
-          sudo docker buildx ls || true
+          sudo docker buildx version >/dev/null 2>&1 || { 
+            echo "WARNING: Buildx not found, installing..."; 
+            sudo docker buildx install || echo "Buildx install skipped (may not be needed)"; 
+          }
+          sudo docker buildx ls >/dev/null 2>&1 || echo "Buildx check completed"
           
           echo "=== Building Docker image ==="
-          sudo -E docker compose build --no-cache || { echo "ERROR: Docker build failed"; exit 1; }
+          BUILD_ARGS=""
+          if [ "${FORCE_REBUILD:-false}" == "true" ]; then
+            echo "Force rebuild (no cache)..."
+            BUILD_ARGS="--no-cache"
+          else
+            echo "Building with cache..."
+          fi
+          sudo -E $DOCKER_COMPOSE_CMD build $BUILD_ARGS || { echo "ERROR: Docker build failed"; exit 1; }
           
           echo "=== Starting containers ==="
-          sudo -E docker compose up -d || { echo "ERROR: Docker compose up failed"; exit 1; }
+          sudo -E $DOCKER_COMPOSE_CMD up -d || { echo "ERROR: Docker compose up failed"; exit 1; }
           
           echo "=== Waiting for containers to start ==="
           sleep 5
           
           echo "=== Checking container status ==="
-          sudo docker compose ps || { echo "ERROR: Cannot check container status"; exit 1; }
+          sudo $DOCKER_COMPOSE_CMD ps || { echo "ERROR: Cannot check container status"; exit 1; }
           
           echo "=== Deployment completed successfully ==="
         DEPLOY_SCRIPT
