@@ -15,6 +15,14 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # Define global environment variables for the job
+    env:
+      EC2_HOST: ${{ secrets.EC2_HOST }}
+      EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+      RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}
+      DB_USERNAME: ${{ secrets.DB_USERNAME }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -27,9 +35,11 @@ jobs:
           cache: maven
 
       - name: Build with Maven
+        # Skipping tests to speed up the deployment process
         run: mvn clean package -DskipTests
 
       - name: Prepare deployment package
+        # Grouping all necessary files for the EC2 environment
         run: |
           mkdir -p deploy-package
           cp target/auro-dining-0.0.1-SNAPSHOT.jar deploy-package/
@@ -38,37 +48,62 @@ jobs:
           cp deploy/docker-compose.yml deploy-package/
 
       - name: Setup SSH
+        # Adding EC2 to known_hosts to prevent interactive prompts
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
 
       - name: Copy files to EC2
+        # Transferring the package to a temporary 'incoming' directory
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USERNAME || 'ec2-user' }}@${{ secrets.EC2_HOST }} "mkdir -p ~/auro-dining/incoming"
-          scp -i ~/.ssh/deploy_key deploy-package/* ${{ secrets.EC2_USERNAME || 'ec2-user' }}@${{ secrets.EC2_HOST }}:~/auro-dining/incoming/
+          ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST "mkdir -p ~/auro-dining/incoming"
+          scp -i ~/.ssh/deploy_key deploy-package/* ${EC2_USERNAME:-ec2-user}@$EC2_HOST:~/auro-dining/incoming/
 
       - name: Deploy on EC2 (Docker)
         run: |
+          # The 'DEPLOY_SCRIPT' block executes commands directly on the remote server
           ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST << 'DEPLOY_SCRIPT'
             set -e
+            set -x
+          
+            # Ensure /usr/local/bin is available for Docker Compose execution
             export PATH=$PATH:/usr/local/bin
-            cd ~/auro-dining
           
-            echo "RDS_ENDPOINT=${{ secrets.RDS_ENDPOINT }}" > .env
-            echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
-            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-            chmod 600 .env 
+            echo "=== Starting deployment ==="
+            cd ~/auro-dining || { mkdir -p ~/auro-dining && cd ~/auro-dining; }
           
+            # --- CRITICAL: PERSIST SECRETS VIA .ENV FILE ---
+            # This bypasses sudo environment stripping issues
+            echo "RDS_ENDPOINT=$RDS_ENDPOINT" > .env
+            echo "DB_USERNAME=$DB_USERNAME" >> .env
+            echo "DB_PASSWORD=$DB_PASSWORD" >> .env
+            chmod 600 .env
+            echo "Created .env file successfully."
+
+            # Move incoming artifacts to project root
+            echo "=== Updating application files ==="
             mv -f incoming/* .
             rm -rf incoming
-
-            DOCKER_COMPOSE_CMD="/usr/local/bin/docker-compose"
-
-            echo "=== Building and Starting Containers ==="
-            sudo $DOCKER_COMPOSE_CMD build
-            sudo $DOCKER_COMPOSE_CMD up -d
           
+            # Use absolute path for Docker Compose stability
+            DOCKER_COMPOSE_CMD="/usr/local/bin/docker-compose"
+          
+            # Using --build to ensure code changes are applied to the new image
+            # No -E needed because Docker Compose automatically reads the local .env file
+            echo "=== Building and Starting Containers ==="
+            sudo $DOCKER_COMPOSE_CMD up -d --build
+          
+            # Final verification of container health
+            echo "=== Deployment Status ==="
             sudo $DOCKER_COMPOSE_CMD ps
+          
+            echo "=== Deployment finished successfully ==="
           DEPLOY_SCRIPT
+
+      - name: Verify deployment
+        # Simple health check to see if the web server responds
+        run: |
+          sleep 20
+          curl -sf "http://$EC2_HOST/" || echo "Warning: Connection refused. Check AWS Security Group or App Logs."
