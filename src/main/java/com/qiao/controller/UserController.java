@@ -7,6 +7,7 @@ import com.qiao.service.UserService;
 import com.qiao.utils.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,6 +36,10 @@ public class UserController {
     @Autowired(required = false)
     private EmailService emailService;
 
+    // For local testing, use fixedCode and store it in Redis
+    @Value("${email.fixed-code:}")
+    private String fixedCode;
+
     /**
      * Send verification code via email
      */
@@ -47,9 +52,15 @@ public class UserController {
         }
         
         try {
-            // Generate 4-digit code
-            String code = ValidateCodeUtils.generateValidateCode(4).toString();
-            log.info("Verification code for email {}: {}", email, code);
+            // Use fixed code for local testing when configured; otherwise generate random code
+            String code;
+            if (fixedCode != null && !fixedCode.trim().isEmpty()) {
+                code = fixedCode.trim();
+                log.info("Using fixed verification code for email {}: {}", email, code);
+            } else {
+                code = ValidateCodeUtils.generateValidateCode(4).toString();
+                log.info("Verification code for email {}: {}", email, code);
+            }
 
             // Send email via configured service (AWS SES or Log)
             if (emailService != null) {
@@ -58,7 +69,6 @@ public class UserController {
                     log.warn("Failed to send email, but code is still stored in Redis for testing");
                 }
             } else {
-                // Fallback: just log (for backward compatibility)
                 log.info("No email service configured. Code: {}", code);
             }
 

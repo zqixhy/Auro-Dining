@@ -40,7 +40,6 @@ auro-dining:
   path: /app/images
 
 
-# Email Configuration (Recommended for production)
 email:
   provider: ses
   from: zqixhy@gmail.com
