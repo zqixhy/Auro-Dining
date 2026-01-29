@@ -8,11 +8,13 @@ import com.qiao.utils.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import org.springframework.dao.DataIntegrityViolationException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
@@ -30,8 +32,9 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    /** Use StringRedisTemplate so verification code is stored/read as plain string (avoids Jackson serialization mismatch). */
     @Autowired
-    private RedisTemplate redisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
     @Autowired(required = false)
     private EmailService emailService;
@@ -72,8 +75,8 @@ public class UserController {
                 log.info("No email service configured. Code: {}", code);
             }
 
-            // Store code in Redis for 5 minutes (use email as key)
-            redisTemplate.opsForValue().set("email:" + email, code, 5, TimeUnit.MINUTES);
+            // Store code in Redis for 5 minutes (plain string, use email as key)
+            stringRedisTemplate.opsForValue().set("email:" + email, code, 5, TimeUnit.MINUTES);
 
             return R.success("Verification code sent to email");
         } catch (Exception e) {
@@ -98,15 +101,16 @@ public class UserController {
             return R.error("Login failed: Verification code is missing");
         }
 
-        String email = emailObj.toString();
-        String code = codeObj.toString();
+        String email = emailObj.toString().trim();
+        String code = codeObj != null ? codeObj.toString().trim() : "";
         log.info("Attempting login: email={}, code={}", email, code);
 
         try {
-            // 1. Verify code from Redis
+            // 1. Verify code from Redis (plain string)
             String cacheKey = "email:" + email;
-            Object cachedCode = redisTemplate.opsForValue().get(cacheKey);
-            if(cachedCode == null || !cachedCode.equals(code)){
+            String cachedCode = stringRedisTemplate.opsForValue().get(cacheKey);
+            if (cachedCode == null || !cachedCode.equals(code)) {
+                log.warn("Invalid code: cachedCode={}, inputCode={}", cachedCode, code);
                 return R.error("Login failed: Invalid code");
             }
 
@@ -125,11 +129,14 @@ public class UserController {
             request.getSession().setAttribute("user", user.getId());
 
             // 5. Clear Redis code after successful login
-            redisTemplate.delete(cacheKey);
+            stringRedisTemplate.delete(cacheKey);
 
             return R.success(user);
+        } catch (DataIntegrityViolationException e) {
+            log.error("Login failed: user table sequence out of sync (duplicate key). Run: SELECT setval(pg_get_serial_sequence('\"user\"', 'id'), (SELECT COALESCE(MAX(id), 1) FROM \"user\"));", e);
+            return R.error("Login failed: server database error. Please try again or contact support.");
         } catch (Exception e) {
-            log.error("Login failed due to Redis issue", e);
+            log.error("Login failed", e);
             return R.error("Service temporarily unavailable. Please try again later.");
         }
     }

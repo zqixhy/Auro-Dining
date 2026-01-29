@@ -48,7 +48,7 @@
                 <div class="divName">{{item.name}}</div>
                 <div class="divDesc">{{item.description}}</div>
                 <div class="divDesc">{{(item.saleNum ? item.saleNum : 0) + ' sold'}}</div>
-                <div class="divBottom"><span>$</span><span>{{item.price/100}}</span></div>
+                <div class="divBottom"><span>$</span><span>{{formatPrice(item.price)}}</span></div>
                 <div class="divNum">
                   <div class="divSubtract" v-if="item.number > 0">
                     <img src="./images/subtract.png" @click.prevent.stop="subtractCart(item)"/>
@@ -92,7 +92,7 @@
             </div>
           </div>
           <div class="divBottom">
-            <div><span class="spanMoney">$</span>{{dialogFlavor.price/100}}</div>
+            <div><span class="spanMoney">$</span>{{formatPrice(dialogFlavor.price)}}</div>
             <div @click="dialogFlavorAddCart">Add to Cart</div>
           </div>
           <div class="divFlavorClose" @click="dialogFlavor.show = false">
@@ -116,7 +116,7 @@
               <div class="divDesc">
                 <div class="name">{{item.name}}</div>
                 <div class="price">
-                  <span class="spanMoney">$</span>{{item.amount}}</div>
+                  <span class="spanMoney">$</span>{{formatPrice(item.amount)}}</div>
               </div>
               <div class="divNum">
                 <div class="divSubtract">
@@ -148,7 +148,7 @@
           </div>
           <div class="divNum">
             <div class="left">
-              <span>$</span><span>{{detailsDialog.item.price/100}}</span>
+              <span>$</span><span>{{formatPrice(detailsDialog.item.price)}}</span>
             </div>
             <div class="right">
                 <div class="divSubtract" v-if="detailsDialog.item.number > 0">
@@ -181,7 +181,7 @@
                 </el-image>
                 <div class="divSubTitle">{{item.name + '(' + item.copies + ' servings)' }}
                   <div class="divPrice">
-                    <span>$</span><span>{{item.price/100}}</span>
+                    <span>$</span><span>{{formatPrice(item.price)}}</span>
                   </div>
                 </div>                
                 <div class="content">{{item.description}}</div>
@@ -189,7 +189,7 @@
             </div>
           <div class="divNum">
               <div class="left">
-                <span>$</span><span>{{comboDialog.item.price/100}}</span>
+                <span>$</span><span>{{formatPrice(comboDialog.item.price)}}</span>
               </div>
               <div class="right">
                   <div class="divSubtract" v-if="comboDialog.item.number > 0">
@@ -261,7 +261,7 @@
               this.cartData.forEach(item=>{
                 price += (item.number * item.amount)
               })
-              return price
+              return price.toFixed(2)
             }
           },
           created(){
@@ -279,6 +279,11 @@
             this.initData()
           },
           methods:{
+            formatPrice(v) {
+              if (v == null || v === '') return '0.00'
+              const n = Number(v)
+              return isNaN(n) ? '0.00' : n.toFixed(2)
+            },
             initData(){
               Promise.all([categoryListApi(),cartListApi({})]).then(res=>{
                 if(res[0].code === 1){
@@ -367,7 +372,7 @@
 
             async addCart(item){
               let params = {
-                amount:item.price/100,
+                amount: item.price,
                 dishFlavor:item.dishFlavor,
                 dishId:undefined,
                 comboId:undefined,

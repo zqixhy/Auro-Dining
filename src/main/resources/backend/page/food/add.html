@@ -333,7 +333,7 @@
               console.log(res)
               if (String(res.code) === '1') {
                 this.ruleForm = { ...res.data }
-                this.ruleForm.price = String(res.data.price/100)
+                this.ruleForm.price = res.data.price != null ? String(res.data.price) : ''
                 this.ruleForm.status = res.data.status == '1'
                 this.dishFlavors = res.data.flavors && res.data.flavors.map(obj => ({ ...obj, value: JSON.parse(obj.value),showOption: false }))
                 console.log('this.dishFlavors',this.dishFlavors)
@@ -436,7 +436,7 @@
                 let params = {...this.ruleForm}
                 // params.flavors = this.dishFlavors
                 params.status = this.ruleForm ? 1 : 0
-                params.price *= 100
+                params.price = Number(params.price)
                 params.categoryId = this.ruleForm.categoryId
                 params.flavors = this.dishFlavors.map(obj => ({ ...obj, value: JSON.stringify(obj.value) }))
                 delete params.dishFlavors

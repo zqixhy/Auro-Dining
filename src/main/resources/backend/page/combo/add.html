@@ -198,7 +198,7 @@
                       <el-table :data="dishTable" style="width: 100%">
                         <el-table-column prop="name" label="name" width="180" align="center"></el-table-column>
                         <el-table-column prop="price" label="price" width="180">
-                          <template slot-scope="scope"> {{ Number(scope.row.price) / 100 }} </template>
+                          <template slot-scope="scope"> {{ Number(scope.row.price).toFixed(2) }} </template>
                         </el-table-column>
                         <el-table-column prop="address" label="number" align="center">
                           <template slot-scope="scope">
@@ -313,7 +313,7 @@
                       <div class="item">
                         <span style="flex: 3;text-align: left">{{ item.dishName }}</span>
                         <span>{{ item.status == 0 ? 'out of stock' : 'in stock' }}</span>
-                        <span>{{ Number(item.price)/100 }}</span>
+                        <span>{{ Number(item.price).toFixed(2) }}</span>
                       </div>
                     </el-checkbox>
                   </div>
@@ -332,7 +332,7 @@
                 class="item"
               >
                 <span>{{ item.dishName }}</span>
-                <span class="price">$ {{ Number(item.price)/100 }} </span>
+                <span class="price">$ {{ Number(item.price).toFixed(2) }} </span>
                 <span
                   class="del"
                   @click="delCheck(ind)"
@@ -459,7 +459,7 @@
               if (String(res.code) === '1') {
                 this.ruleForm = res.data
                 this.ruleForm.status = res.data.status === '1'
-                this.ruleForm.price = res.data.price / 100
+                this.ruleForm.price = res.data.price != null ? res.data.price : ''
                 this.imageUrl = `/common/download?name=${res.data.image}`
                 this.checkList = res.data.comboDishes
                 this.dishTable = res.data.comboDishes
@@ -518,7 +518,7 @@
             this.$refs[formName].validate((valid) => {
               if (valid) {
                 let prams = { ...this.ruleForm }
-                prams.price *= 100
+                prams.price = Number(prams.price)
                 prams.comboDishes = this.dishTable.map((obj) => ({
                   copies: obj.copies,
                   dishId: obj.dishId,

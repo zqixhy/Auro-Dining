@@ -58,7 +58,7 @@
                     </div>
                     <div class="resultItem">
                         <span class="resultLabel">Total:</span>
-                        <span class="resultValue price">${{order[0].amount}}</span>
+                        <span class="resultValue price">${{(Number(order[0].amount)).toFixed(2)}}</span>
                     </div>
                 </div>
                 <div class="btn" v-if="order[0].status === 4">
