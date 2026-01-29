@@ -12,10 +12,6 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
 
-    @Override
-    public User getByPhone(String phone) {
-        return userRepository.findByPhone(phone);
-    }
 
     @Override
     public User getByEmail(String email) {
@@ -27,10 +23,8 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
-    // 🔥 Add this implementation
     @Override
     public User getById(Long id) {
-        // JPA's findById returns an Optional, so we use .orElse(null)
         return userRepository.findById(id).orElse(null);
     }
 }
