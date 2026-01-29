@@ -5,7 +5,8 @@ import javax.persistence.*;
 import java.io.Serializable;
 
 /**
- * Mobile User Entity
+ * Mobile User Entity.
+ * Login and verification code are by email (AWS SES). Phone is optional for contact.
  */
 @Data
 @Entity
@@ -20,8 +21,10 @@ public class User implements Serializable {
 
     private String name;
 
+    /** Optional; used for contact. Login identity is email. */
     private String phone;
 
+    /** Login identity; verification code sent via AWS SES. */
     private String email;
 
     // Map the database field 'id_number' to the Java field

@@ -177,29 +177,29 @@
   letter-spacing: 0.5px;
 }
 
-#login .btnNoPhone {
+#login .btnNoEmail {
   color: #999999;
   background: rgba(255, 255, 255, 0.6);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   cursor: not-allowed;
 }
 
-#login .btnNoPhone:active {
+#login .btnNoEmail:active {
   transform: scale(0.98);
 }
 
-#login .btnPhone {
+#login .btnEmail {
   background: linear-gradient(135deg, #ffc200 0%, #ffaa00 100%);
   color: #333333;
   box-shadow: 0 6px 20px rgba(255, 194, 0, 0.4);
 }
 
-#login .btnPhone:hover {
+#login .btnEmail:hover {
   box-shadow: 0 8px 24px rgba(255, 194, 0, 0.5);
   transform: translateY(-2px);
 }
 
-#login .btnPhone:active {
+#login .btnEmail:active {
   background: linear-gradient(135deg, #ffaa00 0%, #ff9500 100%);
   transform: translateY(0);
   box-shadow: 0 4px 12px rgba(255, 194, 0, 0.3);

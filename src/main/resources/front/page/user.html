@@ -21,7 +21,7 @@
                 <img src="./../images/headPage.png"/>
                 <div class="desc">
                     <div class="divName">Josh <img src="./../images/women.png"/></div>
-                    <div class="divPhone">{{userPhone}}</div>
+                    <div class="divPhone">{{userEmail}}</div>
                 </div>
             </div>
         </div>
@@ -84,9 +84,10 @@
             data(){
                 return {
                     form:{
-                        phone:'',
+                        email:'',
                         code:''
                     },
+                    userEmail: '',
                     msgFlag:false,
                     order:[{
                         orderTime:'',
@@ -102,7 +103,7 @@
             },
             computed:{},
             created(){
-                this.userPhone =sessionStorage.getItem("userPhone")
+                this.userEmail = sessionStorage.getItem("userEmail") || ''
                 this.initData()
             },
             mounted(){},

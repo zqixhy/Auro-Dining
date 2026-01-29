@@ -24,13 +24,13 @@
             </div>
             <div class="divContent">
                 <div class="divContainer">
-                    <el-input placeholder="Phone Number" v-model="form.phone"  maxlength='20'/></el-input>
+                    <el-input placeholder="Email Address" v-model="form.email"  maxlength='64'/></el-input>
                     <div class="divSplit"></div>
                     <el-input placeholder="Verification Code" v-model="form.code"  maxlength='20'/></el-input>
                     <span @click='getCode'>Send Code</span>
                 </div>
-                <div class="divMsg" v-if="msgFlag">Invalid phone number</div>
-                <el-button type="primary" :class="{btnSubmit:1===1,btnNoPhone:!form.phone,btnPhone:form.phone}" @click="btnLogin">Sign In</el-button>
+                <div class="divMsg" v-if="msgFlag">Invalid email address</div>
+                <el-button type="primary" :class="{btnSubmit:1===1,btnNoEmail:!form.email,btnEmail:form.email}" @click="btnLogin">Sign In</el-button>
             </div>
         </div>
         <script src="../../backend/plugins/vue/vue.js"></script>
@@ -46,7 +46,7 @@
             data(){
                 return {
                     form:{
-                        phone:'',
+                        email:'',
                         code:''
                     },
                     msgFlag:false,
@@ -59,30 +59,29 @@
             methods:{
                 getCode(){
                     this.form.code = ''
-                    const regex = /^(13[0-9]{9})|(15[0-9]{9})|(17[0-9]{9})|(18[0-9]{9})|(19[0-9]{9})$/;
-                    if (regex.test(this.form.phone)) {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (emailRegex.test(this.form.email)) {
                         this.msgFlag = false
-                        //this.form.code = (Math.random()*1000000).toFixed(0)
-                        sendMsgApi({phone:this.form.phone})
-                    }else{
+                        sendMsgApi({ email: this.form.email })
+                    } else {
                         this.msgFlag = true
                     }
                 },
                 async btnLogin(){
-                    if(this.form.phone && this.form.code){
+                    if(this.form.email && this.form.code){
                         this.loading = true
                         const res = await loginApi(this.form)
                         this.loading = false
                         if(res.code === 1){
-                            sessionStorage.setItem("userPhone",this.form.phone)
+                            sessionStorage.setItem("userEmail", this.form.email)
                             window.requestAnimationFrame(()=>{
                                 window.location.href= '/front/index.html'
-                            })                           
+                            })
                         }else{
                             this.$notify({ type:'warning', message:res.msg});
                         }
                     }else{
-                        this.$notify({ type:'warning', message:'Please enter phone number'});
+                        this.$notify({ type:'warning', message:'Please enter email address'});
                     }
                 }
             }

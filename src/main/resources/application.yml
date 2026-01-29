@@ -38,14 +38,11 @@ spring:
 auro-dining:
   path: ${user.home}/Pictures/auro_dining_images/
 
-sms:
-  provider: log
-  fixed-code: 1234
-
+# Verification codes are sent via email (AWS SES).
 email:
   provider: log
-  # For testing: set a fixed code (e.g., "1234") to always use this code
+  # For testing: set a fixed code
   fixed-code: 1234
-  # Sender email address (must be verified in AWS SES for production)
+  # Sender email address by AWS SES for production
   from: zqixhy@gmail.com
 

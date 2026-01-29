@@ -4,10 +4,8 @@ import com.qiao.entity.User;
 
 public interface UserService {
 
-    // Find user by phone for login
-    User getByPhone(String phone);
 
-    // Find user by email for login
+    // Find user by email for login identity
     User getByEmail(String email);
 
     // Save or update user
