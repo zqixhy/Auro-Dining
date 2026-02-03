@@ -63,47 +63,57 @@ jobs:
 
       - name: Deploy on EC2 (Docker)
         run: |
-          # The 'DEPLOY_SCRIPT' block executes commands directly on the remote server
-          ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST << DEPLOY_SCRIPT
-            set -e
-            set -x
-          
-            # Ensure /usr/local/bin is available for Docker Compose execution
-            export PATH=$PATH:/usr/local/bin
-          
-            echo "=== Starting deployment ==="
-            cd ~/auro-dining || { mkdir -p ~/auro-dining && cd ~/auro-dining; }
-          
-            # --- CRITICAL: PERSIST SECRETS VIA .ENV FILE ---
-            # This bypasses sudo environment stripping issues
-            echo "RDS_ENDPOINT=$RDS_ENDPOINT" > .env
-            echo "DB_USERNAME=$DB_USERNAME" >> .env
-            echo "DB_PASSWORD=$DB_PASSWORD" >> .env
-            chmod 600 .env
-            echo "Created .env file successfully."
+          ssh -i ~/.ssh/deploy_key ${EC2_USERNAME:-ec2-user}@$EC2_HOST env \
+            RDS_ENDPOINT="$RDS_ENDPOINT" \
+            DB_USERNAME="$DB_USERNAME" \
+            DB_PASSWORD="$DB_PASSWORD" \
+            bash -s << 'DEPLOY_SCRIPT'
+          set -e
+          set -x
 
-            # Move incoming artifacts to project root
-            echo "=== Updating application files ==="
-            mv -f incoming/* .
-            rm -rf incoming
-          
-            # Use absolute path for Docker Compose stability
-            DOCKER_COMPOSE_CMD="/usr/local/bin/docker-compose"
-          
-            # Using --build to ensure code changes are applied to the new image
-            # No -E needed because Docker Compose automatically reads the local .env file
-            echo "=== Building and Starting Containers ==="
-            sudo -E SPRING_PROFILES_ACTIVE=aws \$DOCKER_COMPOSE_CMD up -d --build
-          
-            # Final verification of container health
-            echo "=== Deployment Status ==="
-            sudo \$DOCKER_COMPOSE_CMD ps
-          
-            echo "=== Deployment finished successfully ==="
+          export PATH=$PATH:/usr/local/bin
+
+          echo "=== Starting deployment ==="
+          cd ~/auro-dining || { mkdir -p ~/auro-dining && cd ~/auro-dining; }
+
+          echo "RDS_ENDPOINT=$RDS_ENDPOINT" > .env
+          echo "DB_USERNAME=$DB_USERNAME" >> .env
+          echo "DB_PASSWORD=$DB_PASSWORD" >> .env
+          chmod 600 .env
+          echo "Created .env file successfully."
+
+          echo "=== Updating application files ==="
+          mv -f incoming/* .
+          rm -rf incoming
+
+          DOCKER_COMPOSE_CMD="/usr/local/bin/docker-compose"
+
+          echo "=== Building and Starting Containers ==="
+          sudo -E SPRING_PROFILES_ACTIVE=aws $DOCKER_COMPOSE_CMD up -d --build
+
+          echo "=== Deployment Status ==="
+          sudo $DOCKER_COMPOSE_CMD ps
+
+          echo "=== Deployment finished successfully ==="
           DEPLOY_SCRIPT
 
-      - name: Verify deployment
-        # Simple health check to see if the web server responds
+      - name: Health check (fail job if site unreachable)
+        # Retry curl until success or max attempts; prevents "Actions green but site down"
         run: |
-          sleep 20
-          curl -sf "http://$EC2_HOST/" || echo "Warning: Connection refused. Check AWS Security Group or App Logs."
+          echo "Waiting for application to be ready..."
+          EC2_HOST="$EC2_HOST"
+          MAX_ATTEMPTS=12
+          INTERVAL=10
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            echo "Health check attempt $i/$MAX_ATTEMPTS..."
+            if curl -sf --connect-timeout 5 "http://$EC2_HOST/" > /dev/null; then
+              echo "Health check passed: site is reachable."
+              exit 0
+            fi
+            if [ $i -lt $MAX_ATTEMPTS ]; then
+              echo "Site not ready yet, waiting ${INTERVAL}s..."
+              sleep $INTERVAL
+            fi
+          done
+          echo "ERROR: Health check failed after $MAX_ATTEMPTS attempts. Site at http://$EC2_HOST/ is not reachable."
+          exit 1
